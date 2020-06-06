@@ -5,14 +5,15 @@
 #include "catch2/catch.hpp"
 #include <allocator.hpp>
 
-const uint32_t SIZE_ARENA=100;
+const uint32_t SIZE_ARENA=500;
+const uint32_t END_ARENA=500;
 
 TEST_CASE( "Basic allocation", \
         "first pointer is located at the beggining of the arena +sizeof(arch_t)" ) {
 
     char arena[SIZE_ARENA];
     cus::BasicAllocation mockArena(reinterpret_cast<void *>(&arena[0]), \
-                                   reinterpret_cast<void *>(&arena[SIZE_ARENA-1]));
+                                   reinterpret_cast<void *>(&arena[END_ARENA]));
 
     void * mockRequester;
     const std::size_t sizeB_mockRequester=4;
@@ -21,12 +22,11 @@ TEST_CASE( "Basic allocation", \
             (reinterpret_cast<arch_t>(&arena[0]) ) );
 }
 
-/*
 TEST_CASE( "Multiple allocations", \
         "All the new allocations will use the next free memory" ) {
     char arena[SIZE_ARENA];
     cus::BasicAllocation mockArena(reinterpret_cast<void *>(&arena[0]), \
-                                   reinterpret_cast<void *>(&arena[SIZE_ARENA-1]));
+                                   reinterpret_cast<void *>(&arena[END_ARENA]));
 
     void * mockRequester_a;
     const std::size_t sizeB_mockRequester_a=4;
@@ -51,12 +51,10 @@ TEST_CASE( "Max. allocated size", \
         (allocations * 3 * sizeof(arch_t)) + (2 * sizeof(arch_t))" ) {
     char arena[SIZE_ARENA];
     cus::BasicAllocation mockArena(reinterpret_cast<void *>(&arena[0]), \
-                                   reinterpret_cast<void *>(&arena[SIZE_ARENA-1]));
+                                   reinterpret_cast<void *>(&arena[END_ARENA]));
 
     uint32_t elements=0;
     const std::size_t sizeB_mockRequester=4;
-    //uint32_t maxAllocations=(((SIZE_ARENA/2)-(2*sizeof(arch_t)))/ \
-            (sizeB_mockRequester+(3*sizeof(arch_t))));
     uint32_t maxAllocations=(((SIZE_ARENA)-(sizeof(arch_t)))/ \
             (sizeB_mockRequester+(3*sizeof(arch_t))));
     while(elements <= maxAllocations) {
@@ -75,7 +73,7 @@ TEST_CASE( "Max. allocated size", \
 TEST_CASE( "Clashes passing objects", "the same object cannot allocate two times" ) {
     char arena[SIZE_ARENA];
     cus::BasicAllocation mockArena(reinterpret_cast<void *>(&arena[0]), \
-                                   reinterpret_cast<void *>(&arena[SIZE_ARENA-1]));
+                                   reinterpret_cast<void *>(&arena[END_ARENA]));
 
     void * mockRequester=nullptr;
     const std::size_t sizeB_mockRequester=4;
@@ -90,15 +88,17 @@ TEST_CASE( "Clashes passing objects", "the same object cannot allocate two times
 TEST_CASE( "Clashed during allocation", "two arenas cannot share space" ) {
     char arena[SIZE_ARENA];
     cus::BasicAllocation mockArena_a(reinterpret_cast<void *>(&arena[0]), \
-                                   reinterpret_cast<void *>(&arena[SIZE_ARENA-1]));
+                                   reinterpret_cast<void *>(&arena[END_ARENA]));
     cus::BasicAllocation mockArena_b(reinterpret_cast<void *>(&arena[0]), \
-                                   reinterpret_cast<void *>(&arena[SIZE_ARENA-1]));
+                                   reinterpret_cast<void *>(&arena[END_ARENA]));
 
     void * mockRequester_a;
     void * mockRequester_b;
 
-    bool valid_a = mockArena_a.allocate((arch_t)&mockRequester_a,mockRequester_a,(std::size_t)4);
-    bool valid_b = mockArena_b.allocate((arch_t)&mockRequester_b,mockRequester_b,(std::size_t)4);
+    bool valid_a = mockArena_a.allocate((arch_t)&mockRequester_a,mockRequester_a, \
+            (std::size_t)4);
+    bool valid_b = mockArena_b.allocate((arch_t)&mockRequester_b,mockRequester_b, \
+            (std::size_t)4);
 
     REQUIRE(reinterpret_cast<arch_t>(mockRequester_a) != reinterpret_cast<arch_t>(mockRequester_b));
 }
@@ -106,7 +106,7 @@ TEST_CASE( "Clashed during allocation", "two arenas cannot share space" ) {
 TEST_CASE( "Basic reallocation", "Element is resized if there is enough space") {
     char arena[SIZE_ARENA];
     cus::BasicAllocation mockArena(reinterpret_cast<void *>(&arena[0]), \
-                                   reinterpret_cast<void *>(&arena[SIZE_ARENA-1]));
+                                   reinterpret_cast<void *>(&arena[END_ARENA]));
 
     void * mockRequester;
     const std::size_t sizeB_mockRequester=4;
@@ -123,7 +123,7 @@ TEST_CASE( "Basic reallocation", "Element is resized if there is enough space") 
 TEST_CASE( "Multiple reallocations", "Next elements have to be reorganized") {
     char arena[SIZE_ARENA];
     cus::BasicAllocation mockArena(reinterpret_cast<void *>(&arena[0]), \
-                                   reinterpret_cast<void *>(&arena[SIZE_ARENA-1]));
+                                   reinterpret_cast<void *>(&arena[END_ARENA-1]));
 
     void * mockRequester_a = nullptr;
     void * mockRequester_b = nullptr;
@@ -151,40 +151,43 @@ TEST_CASE( "Multiple reallocations", "Next elements have to be reorganized") {
 }
 
 TEST_CASE( "Max reallocated size", \
-        "sizeArena/2 >= (allocations*size) + (3 * sizeof(arch_t) + (2*sizeof(arch_t)))") {
+        "sizeArena >= (allocations*size) + (3 * sizeof(arch_t) )") {
     char arena[SIZE_ARENA];
     cus::BasicAllocation mockArena(reinterpret_cast<void *>(&arena[0]), \
-                                   reinterpret_cast<void *>(&arena[SIZE_ARENA-1]));
+                                   reinterpret_cast<void *>(&arena[END_ARENA]));
 
     uint32_t elements=0;
-    std::size_t sizeB_mockRequester=4;
+    std::size_t sizeB_mockRequester=1;
     std::size_t sizeB_mockRequester_next=sizeB_mockRequester+sizeB_mockRequester;
-    //uint32_t maxAllocations=((SIZE_ARENA/2)-(3*sizeof(arch_t)+sizeof(arch_t)))/sizeB_mockRequester;
-    uint32_t maxAllocations=((SIZE_ARENA)-(3*sizeof(arch_t)+sizeof(arch_t)))/sizeB_mockRequester;
-
+    uint32_t maxAllocations=((SIZE_ARENA)-(3*sizeof(arch_t)))/sizeB_mockRequester;
     void * mockRequester;
-    bool valid=mockArena.allocate((arch_t)&mockRequester,mockRequester,sizeB_mockRequester);
-    elements+=2;
+    bool valid=mockArena.allocate((arch_t)&mockRequester,mockRequester, \
+            sizeB_mockRequester);
+    elements++;
     REQUIRE( valid == true );
 
-    while(elements <= maxAllocations) {
+    while(true) {
         bool validRealloc=mockArena.reallocate(mockRequester,sizeB_mockRequester,\
             sizeB_mockRequester_next);
         sizeB_mockRequester=sizeB_mockRequester_next;
-        sizeB_mockRequester_next+=4;
-        REQUIRE( validRealloc == true );
+        sizeB_mockRequester_next+=1;
+
         elements++;
+        if(elements<=maxAllocations) {
+            REQUIRE( validRealloc == true );
+        } else {
+            REQUIRE( validRealloc == false );
+            break;
+        }
     }
-    bool validRealloc=mockArena.reallocate(mockRequester,sizeB_mockRequester,\
-            sizeB_mockRequester_next);
-    REQUIRE( validRealloc == false );
+
 }
 
 TEST_CASE( "Max reallocated from one object", \
         "One reallocation cannot be bigger than arena") {
     char arena[SIZE_ARENA];
     cus::BasicAllocation mockArena(reinterpret_cast<void *>(&arena[0]), \
-                                   reinterpret_cast<void *>(&arena[SIZE_ARENA-1]));
+                                   reinterpret_cast<void *>(&arena[END_ARENA]));
 
     uint32_t elements=0;
     std::size_t sizeB_mockRequester=4;
@@ -206,12 +209,11 @@ TEST_CASE( "Reject reallocations", \
         "A rejected reallocation doesn't change the current situation") {
     char arena[SIZE_ARENA];
     cus::BasicAllocation mockArena(reinterpret_cast<void *>(&arena[0]), \
-                                   reinterpret_cast<void *>(&arena[SIZE_ARENA-1]));
+                                   reinterpret_cast<void *>(&arena[END_ARENA]));
 
     uint32_t elements=0;
     std::size_t sizeB_mockRequester=4;
-    //uint32_t freeDataSpace = (SIZE_ARENA/2) - ((sizeof(arch_t) + (3*sizeof(arch_t))));
-    uint32_t freeDataSpace = (SIZE_ARENA) - ((sizeof(arch_t) + (3*sizeof(arch_t))));
+    uint32_t freeDataSpace = (SIZE_ARENA) - (3*sizeof(arch_t));
 
     {
         void * mockRequester;
@@ -233,7 +235,7 @@ TEST_CASE( "Basic deallocation", \
         "The entire object must be easily deallocated") {
     char arena[SIZE_ARENA];
     cus::BasicAllocation mockArena(reinterpret_cast<void *>(&arena[0]), \
-                                   reinterpret_cast<void *>(&arena[SIZE_ARENA-1]));
+                                   reinterpret_cast<void *>(&arena[END_ARENA]));
 
     uint32_t elements=0;
     //uint32_t freeDataSpace = (SIZE_ARENA/2) - ((2*sizeof(arch_t) + (3*sizeof(arch_t))));
@@ -264,7 +266,7 @@ TEST_CASE( "Multiple deallocation", \
         be the same than before allocations deallocations") {
     char arena[SIZE_ARENA];
     cus::BasicAllocation mockArena(reinterpret_cast<void *>(&arena[0]), \
-                                   reinterpret_cast<void *>(&arena[SIZE_ARENA-1]));
+                                   reinterpret_cast<void *>(&arena[END_ARENA]));
 
     uint32_t elements=0;
     //uint32_t freeDataSpace = (SIZE_ARENA/2) - ((2*sizeof(arch_t) + (3*sizeof(arch_t))));
@@ -319,7 +321,7 @@ TEST_CASE( "Invalid deallocation", \
         "Invalid deallocations does not affect the system") {
     char arena[SIZE_ARENA];
     cus::BasicAllocation mockArena(reinterpret_cast<void *>(&arena[0]), \
-                                   reinterpret_cast<void *>(&arena[SIZE_ARENA-1]));
+                                   reinterpret_cast<void *>(&arena[END_ARENA]));
 
     uint32_t elements=0;
     //uint32_t freeDataSpace = (SIZE_ARENA/2) - ((2*sizeof(arch_t) + (3*sizeof(arch_t))));
@@ -379,7 +381,7 @@ TEST_CASE( "Basic remove elements", \
            "Subparts of an object can be easily removed") {
     char arena[SIZE_ARENA];
     cus::BasicAllocation mockArena(reinterpret_cast<void *>(&arena[0]), \
-                                   reinterpret_cast<void *>(&arena[SIZE_ARENA-1]));
+                                   reinterpret_cast<void *>(&arena[END_ARENA]));
 
     const std::size_t sizeB_mockRequester=16;
     const std::size_t sizeB_mockRequester_toRemove=10;
@@ -402,7 +404,7 @@ TEST_CASE( "Remove elements and restore", \
            "All the removed elements will reorganize the next ones") {
     char arena[SIZE_ARENA];
     cus::BasicAllocation mockArena(reinterpret_cast<void *>(&arena[0]), \
-                                   reinterpret_cast<void *>(&arena[SIZE_ARENA-1]));
+                                   reinterpret_cast<void *>(&arena[END_ARENA]));
 
     const std::size_t sizeB_mockRequester=16;
     const std::size_t sizeB_mockRequester_toRemove=10;
@@ -439,7 +441,7 @@ TEST_CASE( "Remove the whole element", \
         "When the size of the element is removed, the element is deallocated") {
     char arena[SIZE_ARENA];
     cus::BasicAllocation mockArena(reinterpret_cast<void *>(&arena[0]), \
-                                   reinterpret_cast<void *>(&arena[SIZE_ARENA-1]));
+                                   reinterpret_cast<void *>(&arena[END_ARENA]));
 
     uint32_t elements=0;
     //uint32_t freeDataSpace = (SIZE_ARENA/2) - ((2*sizeof(arch_t) + (3*sizeof(arch_t))));
@@ -522,7 +524,7 @@ TEST_CASE( "Basic CrcAllocation", \
         "first pointer is located at the beggining of the arena +sizeof(arch_t)" ) {
     char arena[SIZE_ARENA];
     cus::CrcAllocation mockArena(reinterpret_cast<void *>(&arena[0]), \
-                                   reinterpret_cast<void *>(&arena[SIZE_ARENA-1]));
+                                   reinterpret_cast<void *>(&arena[END_ARENA]));
 
     void * mockRequester;
     const std::size_t sizeB_mockRequester=4;
@@ -535,7 +537,7 @@ TEST_CASE( "Multiple CrcAllocations", \
         "All the new allocations will use the next free memory" ) {
     char arena[SIZE_ARENA];
     cus::CrcAllocation mockArena(reinterpret_cast<void *>(&arena[0]), \
-                                   reinterpret_cast<void *>(&arena[SIZE_ARENA-1]));
+                                   reinterpret_cast<void *>(&arena[END_ARENA]));
 
     void * mockRequester_a;
     const std::size_t sizeB_mockRequester_a=4;
@@ -555,39 +557,40 @@ TEST_CASE( "Multiple CrcAllocations", \
 
 TEST_CASE( "Max. CrcAllocates size", \
         "sizeArena/2 >= (allocations*size) + \
-        (allocations * 3 * sizeof(arch_t)) + (2 * sizeof(arch_t))" ) {
+        (allocations * 3 * sizeof(arch_t)) + (sizeof(arch_t))" ) {
     char arena[SIZE_ARENA];
     cus::CrcAllocation mockArena(reinterpret_cast<void *>(&arena[0]), \
-                                   reinterpret_cast<void *>(&arena[SIZE_ARENA-1]));
+                                   reinterpret_cast<void *>(&arena[END_ARENA]));
 
     uint32_t elements=0;
     const std::size_t sizeB_mockRequester=4;
-    uint32_t maxAllocations=(((SIZE_ARENA/2)-(2*sizeof(arch_t)))/ \
-            (sizeB_mockRequester+(3*sizeof(arch_t))));
-    while(elements <= maxAllocations) {
+    uint32_t maxAllocations=((SIZE_ARENA/2)-(sizeof(arch_t))) / \
+            (sizeB_mockRequester+(3*sizeof(arch_t)));
+    while(true) {
         void * mockRequester;
-
         bool valid=mockArena.allocate((arch_t)&mockRequester,mockRequester,sizeB_mockRequester);
-        REQUIRE( valid == true );
 
+        if(elements<=maxAllocations) {
+            REQUIRE( valid == true );
+        } else {
+            REQUIRE( valid == false );
+            break;
+        }
         elements++;
     }
-    void * mockRequester;
-    bool valid=mockArena.allocate((arch_t)&mockRequester,mockRequester,sizeB_mockRequester);
-    REQUIRE( valid == false );
 }
 
 
 TEST_CASE( "Max reallocated size when CrcAllocation", \
-        "sizeArena/2 >= (allocations*size) + (3 * sizeof(arch_t) + (2*sizeof(arch_t)))") {
+        "sizeArena/2 >= (allocations*size) + (3 * sizeof(arch_t) + (sizeof(arch_t)))") {
     char arena[SIZE_ARENA];
     cus::CrcAllocation mockArena(reinterpret_cast<void *>(&arena[0]), \
-                                   reinterpret_cast<void *>(&arena[SIZE_ARENA-1]));
+                                   reinterpret_cast<void *>(&arena[END_ARENA]));
 
     uint32_t elements=0;
     std::size_t sizeB_mockRequester=4;
     std::size_t sizeB_mockRequester_next=sizeB_mockRequester+sizeB_mockRequester;
-    uint32_t maxAllocations=((SIZE_ARENA/2)-(3*sizeof(arch_t)+sizeof(arch_t)))/sizeB_mockRequester;
+    uint32_t maxAllocations=((SIZE_ARENA/2)-((3*sizeof(arch_t))+sizeof(arch_t)))/sizeB_mockRequester;
 
     void * mockRequester;
     bool valid=mockArena.allocate((arch_t)&mockRequester,mockRequester,sizeB_mockRequester);
@@ -607,11 +610,12 @@ TEST_CASE( "Max reallocated size when CrcAllocation", \
     REQUIRE( validRealloc == false );
 }
 
+
 TEST_CASE( "Max reallocated from one object when CrcAllocation", \
         "One reallocation cannot be bigger than arena") {
     char arena[SIZE_ARENA];
     cus::CrcAllocation mockArena(reinterpret_cast<void *>(&arena[0]), \
-                                   reinterpret_cast<void *>(&arena[SIZE_ARENA-1]));
+                                   reinterpret_cast<void *>(&arena[END_ARENA]));
 
     uint32_t elements=0;
     std::size_t sizeB_mockRequester=4;
@@ -632,7 +636,7 @@ TEST_CASE( "Reject reallocations when CrcAllocation", \
         "A rejected reallocation doesn't change the current situation") {
     char arena[SIZE_ARENA];
     cus::CrcAllocation mockArena(reinterpret_cast<void *>(&arena[0]), \
-                                   reinterpret_cast<void *>(&arena[SIZE_ARENA-1]));
+                                   reinterpret_cast<void *>(&arena[END_ARENA]));
 
     uint32_t elements=0;
     std::size_t sizeB_mockRequester=4;
@@ -658,7 +662,7 @@ TEST_CASE( "Basic deallocation when CrcAllocation", \
         "The entire object must be easily deallocated") {
     char arena[SIZE_ARENA];
     cus::CrcAllocation mockArena(reinterpret_cast<void *>(&arena[0]), \
-                                   reinterpret_cast<void *>(&arena[SIZE_ARENA-1]));
+                                   reinterpret_cast<void *>(&arena[END_ARENA]));
 
     uint32_t elements=0;
     uint32_t freeDataSpace = (SIZE_ARENA/2) - ((2*sizeof(arch_t) + (3*sizeof(arch_t))));
@@ -688,7 +692,7 @@ TEST_CASE( "Multiple deallocation when CrcAllocation", \
         be the same than before allocations deallocations") {
     char arena[SIZE_ARENA];
     cus::CrcAllocation mockArena(reinterpret_cast<void *>(&arena[0]), \
-                                   reinterpret_cast<void *>(&arena[SIZE_ARENA-1]));
+                                   reinterpret_cast<void *>(&arena[END_ARENA]));
 
     uint32_t elements=0;
     uint32_t freeDataSpace = (SIZE_ARENA/2) - ((2*sizeof(arch_t) + (3*sizeof(arch_t))));
@@ -738,7 +742,7 @@ TEST_CASE( "Invalid deallocation when CrcAllocation", \
         "Invalid deallocations does not affect the system") {
     char arena[SIZE_ARENA];
     cus::CrcAllocation mockArena(reinterpret_cast<void *>(&arena[0]), \
-                                   reinterpret_cast<void *>(&arena[SIZE_ARENA-1]));
+                                   reinterpret_cast<void *>(&arena[END_ARENA]));
 
     uint32_t elements=0;
     uint32_t freeDataSpace = (SIZE_ARENA/2) - ((2*sizeof(arch_t) + (3*sizeof(arch_t))));
@@ -788,22 +792,20 @@ TEST_CASE( "Invalid deallocation when CrcAllocation", \
     }
 }
 
-
-
 TEST_CASE( "Basic mirroring", \
         "Half of the arena is mirrored") {
     char arena[SIZE_ARENA];
     cus::CrcAllocation mockArena(reinterpret_cast<void *>(&arena[0]), \
-                                   reinterpret_cast<void *>(&arena[SIZE_ARENA-1]));
+                                   reinterpret_cast<void *>(&arena[END_ARENA]));
 
     {
-        for(uint32_t byteArena=(0+sizeof(arch_t));(byteArena<SIZE_ARENA/2);byteArena++) {
+        for(uint32_t byteArena=(sizeof(arch_t));(byteArena<SIZE_ARENA/2);byteArena++) {
             arena[byteArena]=0xFF;
         }
 
         mockArena.updateMirror();
 
-        for(uint32_t byteArena=(0+sizeof(arch_t));byteArena<(SIZE_ARENA/2);byteArena++) {
+        for(uint32_t byteArena=(sizeof(arch_t));byteArena<(SIZE_ARENA/2);byteArena++) {
             REQUIRE( (arena[byteArena]&0xFF) == 0xFF );
         }
         for(uint32_t byteArena=((SIZE_ARENA/2)+sizeof(arch_t)); \
@@ -817,7 +819,7 @@ TEST_CASE( "Inverted copy", \
         "The mirror is an inverted copy of the original data") {
     char arena[SIZE_ARENA];
     cus::CrcAllocation mockArena(reinterpret_cast<void *>(&arena[0]), \
-                                   reinterpret_cast<void *>(&arena[SIZE_ARENA-1]));
+                                   reinterpret_cast<void *>(&arena[END_ARENA]));
 
     {
         char counterOrig=0;
@@ -846,16 +848,15 @@ TEST_CASE( "Basic check", \
         "Check the CRCs") {
     char arena[SIZE_ARENA];
     cus::CrcAllocation mockArena(reinterpret_cast<void *>(&arena[0]), \
-                                   reinterpret_cast<void *>(&arena[SIZE_ARENA-1]));
+                                   reinterpret_cast<void *>(&arena[END_ARENA]));
 
     {
         char counter=0;
-        for(uint32_t byteArena=(0+sizeof(arch_t));(byteArena<SIZE_ARENA/2);byteArena++) {
+        for(uint32_t byteArena=(sizeof(arch_t));(byteArena<SIZE_ARENA/2);byteArena++) {
             arena[byteArena]=counter++;
         }
         mockArena.updateMirror();
         bool valid = mockArena.checkConsistency();
-
         REQUIRE( valid == true );
     }
 }
@@ -864,7 +865,7 @@ TEST_CASE( "Recover data", \
         "The mirroring can recover the data if one of the mirrors is valid") {
     char arena[SIZE_ARENA];
     cus::CrcAllocation mockArena(reinterpret_cast<void *>(&arena[0]), \
-                                   reinterpret_cast<void *>(&arena[SIZE_ARENA-1]));
+                                   reinterpret_cast<void *>(&arena[END_ARENA]));
 
     {
         char counter=0;
@@ -911,7 +912,7 @@ TEST_CASE( "Restore data", \
         "Check is able to restore the data if possible") {
     char arena[SIZE_ARENA];
     cus::CrcAllocation mockArena(reinterpret_cast<void *>(&arena[0]), \
-                                   reinterpret_cast<void *>(&arena[SIZE_ARENA-1]));
+                                   reinterpret_cast<void *>(&arena[END_ARENA]));
 
     {
         char counterOrig=0;
@@ -947,4 +948,3 @@ TEST_CASE( "Restore data", \
         REQUIRE( arena[(SIZE_ARENA/2)+(20)] == 0x5A );
     }
 }
-*/

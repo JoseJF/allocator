@@ -77,9 +77,9 @@ BasicAllocation::BasicAllocation() {
 
 BasicAllocation::BasicAllocation(const void *startSection,const void *endSection) {
 
-    sizeArena=(((((arch_t)endSection+1)-(arch_t)startSection)));
+    sizeArena=(((((arch_t)endSection)-(arch_t)startSection)));
     start=((arch_t *)(startSection));
-    end=((arch_t *)(endSection));
+    end=((arch_t *)((arch_t)start+sizeArena));
 
     lastData=0;
     lastAddr=0;
@@ -95,18 +95,19 @@ bool BasicAllocation::allocate(arch_t addrRequester, void*& requester, \
     uint32_t incrementSize = nBytes;
     uint32_t addrSectorSize = lastAddr*(sizeof(arch_t));
     uint32_t dataSectorSize = lastData;
-    uint32_t used = incrementSize + addrSectorSize + dataSectorSize;
+    uint32_t used = addrSectorSize + dataSectorSize;
 
-    if(sizeArena>=used) {
+    //std::cout << incrementSize<<" "<<addrSectorSize<<" "<<dataSectorSize<<" "<<used<<" "<<sizeArena<< std::endl;
+
+    if(sizeArena>=incrementSize+used) {
         // Update pointers
         arch_t *endV = (arch_t *)end;
-        endV[(sarch_t)lastAddr*(-1)]=(arch_t)currentFreeAddr;
+        endV[((sarch_t)lastAddr*(-1))-POINTER_TO_DATA]=(arch_t)currentFreeAddr;
         requester=currentFreeAddr;
-        lastAddr++;
-        endV[(sarch_t)lastAddr*(-1)]=nBytes;
-        lastAddr++;
-        endV[(sarch_t)lastAddr*(-1)]=(arch_t)addrRequester;
-        lastAddr++;
+        endV[((sarch_t)lastAddr*(-1))-DATA_SIZE]=nBytes;
+        endV[((sarch_t)lastAddr*(-1))-POINTER_TO_REQUESTER]=(arch_t)addrRequester;
+        // Update Add
+        lastAddr+=TOTAL_ELEMENTS;
         // Update data
         lastData += nBytes;
 
@@ -170,26 +171,28 @@ bool BasicAllocation::reallocate(void*& requester, std::size_t pBytes, \
     bool success=false;
     // check if it fits
     bool itFits=false;
-    void * currentFreeAddr = (void *)((uint8_t *)start+lastData+1);
+    void * currentFreeAddr = (void *)((uint8_t *)start+lastData);
 
     uint32_t incrementSize = nBytes - pBytes;
     uint32_t addrSectorSize = lastAddr*(sizeof(arch_t));
     uint32_t dataSectorSize = lastData;
+    uint32_t used = addrSectorSize + dataSectorSize;
 
-    uint32_t used = incrementSize + addrSectorSize + dataSectorSize;
-
-    if(sizeArena>=used) {
+    if((sizeArena)>=incrementSize+used) {
         itFits=true;
     }
+
+    //std::cout << incrementSize<<" "<<addrSectorSize<<" "<<dataSectorSize<<" "<<used << std::endl;
 
     //move the rest of the data
     if(itFits==true) {
         arch_t numberOfObjects=(lastAddr)/TOTAL_ELEMENTS;
         bool valueFound=false;
-        uint32_t idx;
+        sarch_t idx;
         for(idx=0;idx<numberOfObjects;idx++) {
-            arch_t *value = (arch_t *) (end[(sarch_t)idx*TOTAL_ELEMENTS*(-1)]);
-            if(requester==(void*)value) {
+            arch_t *value = (arch_t *) (end[((sarch_t)idx*TOTAL_ELEMENTS*(-1)) - \
+                    POINTER_TO_DATA]);
+            if(requester==(void *)value) {
                 valueFound=true;
                 arch_t *endV = (arch_t *)end;
                 endV[((TOTAL_ELEMENTS*(sarch_t)idx)*(-1))-DATA_SIZE] = nBytes;
@@ -204,7 +207,8 @@ bool BasicAllocation::reallocate(void*& requester, std::size_t pBytes, \
             for(uint32_t value=(numberOfObjects-1);value>idx;value--) {
 
                 // Move data
-                arch_t data_ = end[(TOTAL_ELEMENTS*(sarch_t)value)*(-1)];
+                arch_t data_ = end[((TOTAL_ELEMENTS*(sarch_t)value)*(-1)) - \
+                               POINTER_TO_DATA];
 
                 void * moveTo = (void *)(data_+(nBytes-pBytes));
                 uint32_t sizeToMove = (arch_t) end[((TOTAL_ELEMENTS*\
@@ -214,7 +218,7 @@ bool BasicAllocation::reallocate(void*& requester, std::size_t pBytes, \
 
                 // Update pointer to the data in the address region
                 arch_t *endV = (arch_t *)end;
-                endV[(TOTAL_ELEMENTS*(sarch_t)value)*(-1)] = (arch_t)moveTo;
+                endV[((TOTAL_ELEMENTS*(sarch_t)value)*(-1))-POINTER_TO_DATA] = (arch_t)moveTo;
 
                 // Update the pointer of the caller object to the allocated region
                 arch_t **object = (arch_t **)end[((TOTAL_ELEMENTS*
@@ -228,7 +232,7 @@ bool BasicAllocation::reallocate(void*& requester, std::size_t pBytes, \
 }
 
 uint32_t BasicAllocation::elements() {
-    return lastAddr/TOTAL_ELEMENTS;
+    return (lastAddr)/TOTAL_ELEMENTS;
 }
 
 /*
@@ -260,7 +264,7 @@ void BasicAllocation::removeFromAddresses(uint32_t indexToDelete, \
                 sizeObject - size;
         memcpy2(element,(void *)((char *)element + size), \
             sizeObject-((arch_t)(((char *)element + size))- \
-                endV[((TOTAL_ELEMENTS*(sarch_t)indexToDelete)*(-1))]));
+                endV[((TOTAL_ELEMENTS*(sarch_t)indexToDelete)*(-1))-POINTER_TO_DATA]));
 
         indexToDelete++;
     }
@@ -269,7 +273,7 @@ void BasicAllocation::removeFromAddresses(uint32_t indexToDelete, \
         // Update pointers
         arch_t *endV = (arch_t *)end;
         sarch_t prevData = ((TOTAL_ELEMENTS*(sarch_t)idx)*(-1)) - \
-                           (skipElement*TOTAL_ELEMENTS);
+                           (skipElement*TOTAL_ELEMENTS)-POINTER_TO_DATA;
         sarch_t prevSize=((TOTAL_ELEMENTS*(sarch_t)idx)*(-1)) - \
                          (skipElement*TOTAL_ELEMENTS)-DATA_SIZE;
         sarch_t prevAddrRequester = 
@@ -281,7 +285,7 @@ void BasicAllocation::removeFromAddresses(uint32_t indexToDelete, \
         arch_t addrRequester = end[prevAddrRequester];
         arch_t newDataAddr = oldDataAddr - size;
 
-        endV[(TOTAL_ELEMENTS*(sarch_t)idx)*(-1)] = newDataAddr;
+        endV[((TOTAL_ELEMENTS*(sarch_t)idx)*(-1))-POINTER_TO_DATA] = newDataAddr;
         endV[((TOTAL_ELEMENTS*(sarch_t)idx)*(-1))-DATA_SIZE] = sizeElement;
         endV[((TOTAL_ELEMENTS*(sarch_t)idx)*(-1))-POINTER_TO_REQUESTER] = addrRequester;
 
@@ -304,7 +308,7 @@ void BasicAllocation::shrinkData() {
     arch_t expectedNextAddr = (arch_t)start;
     lastData=0;
     for(uint32_t idx=0;idx<numberOfObjects;idx++) {
-        arch_t value = end[(TOTAL_ELEMENTS*(sarch_t)idx)*(-1)];
+        arch_t value = end[((TOTAL_ELEMENTS*(sarch_t)idx)*(-1))-POINTER_TO_DATA];
         if(expectedNextAddr != value) {
             // Move data
             uint32_t sizeToMove = (arch_t) end[((TOTAL_ELEMENTS*(sarch_t)idx)*\
@@ -313,7 +317,7 @@ void BasicAllocation::shrinkData() {
 
             // Update pointer to the data in the address region
             arch_t *endV = (arch_t *)end;
-            endV[(TOTAL_ELEMENTS*(sarch_t)idx)*(-1)] = expectedNextAddr;
+            endV[((TOTAL_ELEMENTS*(sarch_t)idx)*(-1))-POINTER_TO_DATA] = expectedNextAddr;
 
             // Update the pointer of the caller object to the allocated region
             arch_t *object = (arch_t *)end[((TOTAL_ELEMENTS*
@@ -339,21 +343,22 @@ void BasicAllocation::showMap() {
     std::cout << "end addr  : " << end << std::endl;
 
     for(uint32_t idx=0;idx<numberOfObjects;idx++) {
-        arch_t *value = (arch_t *) end[(TOTAL_ELEMENTS*(sarch_t)idx)*(-1)];
-        arch_t size = (arch_t) end[((TOTAL_ELEMENTS*(sarch_t)idx)*(-1))-DATA_SIZE];
-        std::cout << "-Present: " << value << " size:" << size << "\n";
+        arch_t value = end[((TOTAL_ELEMENTS*(sarch_t)idx)*(-1))-POINTER_TO_DATA];
+        arch_t req = end[((TOTAL_ELEMENTS*(sarch_t)idx)*(-1))-POINTER_TO_REQUESTER];
+        arch_t size = end[((TOTAL_ELEMENTS*(sarch_t)idx)*(-1))-DATA_SIZE];
+        std::cout << "-Present: " << (arch_t)value << " size:" << size<<" req: "<<(arch_t)req<< "\n";
     }
 }
 
 CrcAllocation::CrcAllocation(const void *startSection,const void *endSection) {
 
-    sizeArena=(((((arch_t)endSection+1)-(arch_t)startSection)/2)-(sizeof(arch_t)));
+    sizeArena=((((arch_t)endSection)-(arch_t)startSection)/2)-sizeof(arch_t);
     startCRC=((arch_t *)startSection);
     start=((arch_t *)(((arch_t)startCRC)+sizeof(arch_t)));
-    end=((arch_t *)((arch_t)start+sizeArena-sizeof(arch_t)));
-    startMirrorCRC=((arch_t *)((arch_t)end + sizeof(arch_t)));
+    end=((arch_t *)((arch_t)startCRC+sizeArena));
+    startMirrorCRC=((arch_t *)((arch_t)end+sizeof(arch_t))); // end goes backwards
     startMirror=((arch_t *)((arch_t)startMirrorCRC + sizeof(arch_t)));
-    endMirror=((arch_t *)((arch_t)startMirror+sizeArena-sizeof(arch_t)));
+    endMirror=((arch_t *)((arch_t)startMirrorCRC+sizeArena));
 
     lastData=0;
     lastAddr=0;
@@ -366,9 +371,9 @@ void CrcAllocation::updateMirror() {
 
     memcpyMirror((void*)startMirror,(const void*)start, \
                  sizeArena);
-    uint32_t crcOrig = crc32((const void *)(start),(const void *)(end-1));
+    uint32_t crcOrig = crc32((const void *)(start),(const void *)((arch_t)end-1));
     uint32_t crcMirror=crc32((const void *)(startMirror),\
-            (const void *)(endMirror-1));
+            (const void *)((arch_t)endMirror-1));
 
     *startCRC=(arch_t)crcOrig;
     *startMirrorCRC=(arch_t)crcMirror;
@@ -381,9 +386,9 @@ bool CrcAllocation::checkConsistency() {
     bool pass=true;
 
     // check CRC
-    uint32_t crcOrig = crc32((const void *)(start),(const void *)(end-1));
+    uint32_t crcOrig = crc32((const void *)(start),(const void *)((arch_t)end-1));
     uint32_t crcMirror = crc32((const void *)(startMirror),\
-            (const void *)(endMirror-1));
+            (const void *)((arch_t)endMirror-1));
 
     if((*startCRC==(arch_t)crcOrig) && (*startMirrorCRC == (arch_t)crcMirror)) {
     } else if ((*startCRC != (arch_t)crcOrig) && \

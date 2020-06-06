@@ -184,30 +184,22 @@ class BasicAllocation: public MathArch, public MemoryMgmt {
          * @brief   Debugging purposes
          */
         void showMap();
-        BasicAllocation();
   protected:
-
+        BasicAllocation();
         void removeFromAddresses(uint32_t indexToDelete, void * element, size_t size);
-        arch_t getFreeSize();
         void shrinkData();
 
         arch_t sizeArena;
         arch_t *start;
         arch_t *end;
-        arch_t *startMirror;
-        arch_t *endMirror;
-        arch_t * startCRC;
-        arch_t * startMirrorCRC;
-        uint32_t crcOrig;
-        uint32_t crcMirror;
         arch_t lastData;
         arch_t lastAddr;
         std::mutex allocator_mutex;
         enum mapPddress {
-            POINTER_TO_DATA,
-            DATA_SIZE,
-            POINTER_TO_REQUESTER,
-            TOTAL_ELEMENTS
+            POINTER_TO_DATA=1,
+            DATA_SIZE=2,
+            POINTER_TO_REQUESTER=3,
+            TOTAL_ELEMENTS=3
         };
 };
 
@@ -260,6 +252,13 @@ class CrcAllocation: public BasicAllocation {
          *          Otherwise, False.
          */
         bool checkConsistency();
+    private:
+        arch_t *startMirror;
+        arch_t *endMirror;
+        arch_t * startCRC;
+        arch_t * startMirrorCRC;
+        uint32_t crcOrig;
+        uint32_t crcMirror;
 };
 
 /*!

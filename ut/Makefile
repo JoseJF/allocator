@@ -11,13 +11,14 @@ COMPILER=g++
 SOURCES = ../code/$(SRC).cpp \
 		  $(SRC)_ut.cpp
 
-ifdef EXTRA_SRC
-	SOURCES += ../code/$(EXTRA_SRC).cpp
+ifeq ($(SRC),allocator)
+SOURCES += ../code/mgmt.cpp
 endif
-#SOURCES += ../code/allocator.cpp \
-#		../code/mgmt.cpp
 
-		#SOURCES += $$i \
+ifeq ($(SRC), vector)
+SOURCES += ../code/allocator.cpp \
+		../code/mgmt.cpp
+endif
 
 # INCLUDES: list of includes, by default, use Includes directory
 INCLUDES = -I./ \

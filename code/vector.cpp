@@ -53,7 +53,6 @@ template <typename T>
 bool Vector<T>::push_back(T value) {
     bool validAlloc = false;
 
-
     if(elements==0) {
         validAlloc = arena->allocate((arch_t)&aMem, aMem,sizeof(T));
     } else {
@@ -73,7 +72,6 @@ bool Vector<T>::push_back(T value) {
 
 template <typename T>
 bool Vector<T>::push_back(Vector<T>& toAppend) {
-    resize(toAppend.size());
     for(uint32_t idx=0;idx<toAppend.size();idx++) {
         push_back(toAppend[idx]);
     }
@@ -87,10 +85,10 @@ bool Vector<T>::resize(uint32_t newElements) {
 
 
     if(elements==0) {
-        validAlloc = arena->allocate((arch_t)&aMem, aMem,sizeof(T));
+        validAlloc = arena->allocate((arch_t)&aMem, aMem,(newElements * sizeof(T)));
     } else {
         std::size_t sizeBytes = elements * sizeof(T);
-        validAlloc = arena->reallocate(aMem,sizeBytes,sizeBytes + sizeof(T));
+        validAlloc = arena->reallocate(aMem,sizeBytes,sizeBytes + (newElements*sizeof(T)));
     }
 
     if(aMem != nullptr && validAlloc==true) {

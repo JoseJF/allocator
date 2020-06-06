@@ -7,11 +7,13 @@
 #include <vector.hpp>
 
 const uint32_t SIZE_ARENA=500;
+const uint32_t END_ARENA=500;
 
+/*
 TEST_CASE( "Basic vector", "Create an empty object" ) {
     char arena[SIZE_ARENA];
     cus::BasicAllocation mockArena(reinterpret_cast<void *>(&arena[0]), \
-                                   reinterpret_cast<void *>(&arena[SIZE_ARENA-1]));
+                                   reinterpret_cast<void *>(&arena[END_ARENA]));
 
     cus::Vector<uint8_t> vector1(mockArena);
     vector1.push_back(uint8_t(1));
@@ -26,7 +28,7 @@ TEST_CASE( "Basic vector", "Create an empty object" ) {
 TEST_CASE( "Initialize the vector", "Construct an initialized object" ) {
     char arena[SIZE_ARENA];
     cus::BasicAllocation mockArena(reinterpret_cast<void *>(&arena[0]), \
-                                   reinterpret_cast<void *>(&arena[SIZE_ARENA-1]));
+                                   reinterpret_cast<void *>(&arena[END_ARENA]));
 
     std::initializer_list<uint8_t> initList{0,1,2,3,4,5,6,7,8,9};
     cus::Vector<uint8_t> vector1(mockArena,initList);
@@ -40,7 +42,7 @@ TEST_CASE( "Initialize the vector", "Construct an initialized object" ) {
 TEST_CASE( "Used space", "A vector can use the whole arena minus metadata" ) {
     char arena[SIZE_ARENA];
     cus::BasicAllocation mockArena(reinterpret_cast<void *>(&arena[0]), \
-                                   reinterpret_cast<void *>(&arena[SIZE_ARENA-1]));
+                                   reinterpret_cast<void *>(&arena[END_ARENA]));
 
     cus::Vector<uint8_t> vector(mockArena);
 
@@ -59,7 +61,7 @@ TEST_CASE( "Used space", "A vector can use the whole arena minus metadata" ) {
 TEST_CASE( "Destructor", "A vector releases the used memory" ) {
     char arena[SIZE_ARENA];
     cus::BasicAllocation mockArena(reinterpret_cast<void *>(&arena[0]), \
-                                   reinterpret_cast<void *>(&arena[SIZE_ARENA-1]));
+                                   reinterpret_cast<void *>(&arena[END_ARENA]));
 
     uint8_t * firstVector;
     uint8_t * secondVector;
@@ -96,7 +98,7 @@ TEST_CASE( "Destructor", "A vector releases the used memory" ) {
 TEST_CASE( "Append to another vector", "When append, both objects are available" ) {
     char arena[SIZE_ARENA];
     cus::BasicAllocation mockArena(reinterpret_cast<void *>(&arena[0]), \
-                                   reinterpret_cast<void *>(&arena[SIZE_ARENA-1]));
+                                   reinterpret_cast<void *>(&arena[END_ARENA]));
 
     uint8_t * firstVector;
     uint8_t * secondVector;
@@ -113,24 +115,9 @@ TEST_CASE( "Append to another vector", "When append, both objects are available"
         vectorB.push_back(uint8_t(i));
     }
 
-    //vectorTemp.push_back(vectorA);
-    //vectorA.push_back(vectorB);
-    //vectorB.push_back(vectorTemp);
-
-    std::cout << "vectorA" << std::endl;
-    for(uint8_t i=0;i<vectorA.size();i++) {
-        std::cout << (uint32_t)vectorA[i] << std::endl;
-    }
-
-    std::cout << "vectorB" << std::endl;
-    for(uint8_t i=0;i<vectorB.size();i++) {
-        std::cout << (uint32_t)vectorB[i] << std::endl;
-    }
-
-    std::cout << "vectorTemp" << std::endl;
-    for(uint8_t i=0;i<vectorTemp.size();i++) {
-        std::cout << (uint32_t)vectorTemp[i] << std::endl;
-    }
+    vectorTemp.push_back(vectorA);
+    vectorA.push_back(vectorB);
+    vectorB.push_back(vectorTemp);
 
     for(uint8_t i=0;i<20;i++) {
         if(i<10) {
@@ -141,6 +128,61 @@ TEST_CASE( "Append to another vector", "When append, both objects are available"
             REQUIRE( (uint32_t)vectorB[i] == (uint32_t)(i-10) );
         }
     }
+}
+
+*/
+TEST_CASE( "Different types", "Different types of vectors can be created" ) {
+    char arena[SIZE_ARENA];
+    cus::BasicAllocation mockArena(reinterpret_cast<void *>(&arena[0]), \
+                                   reinterpret_cast<void *>(&arena[END_ARENA]));
+
+    uint8_t * firstVector;
+    uint8_t * secondVector;
+
+    cus::Vector<uint8_t> vectorA(mockArena);
+    cus::Vector<uint16_t> vectorB(mockArena);
+    cus::Vector<uint32_t> vectorC(mockArena);
+    cus::Vector<uint8_t> vectorD(mockArena);
+    cus::Vector<uint16_t> vectorE(mockArena);
+    cus::Vector<uint32_t> vectorF(mockArena);
+
+    {
+        uint32_t i=0;
+        bool failure=false;
+        while(failure==false) {
+            failure |= vectorA.push_back(uint8_t(i));
+            failure |= vectorB.push_back(uint16_t(i+1));
+            failure |= vectorC.push_back(uint32_t(i+2));
+            failure |= vectorD.push_back(uint8_t(i+3));
+            failure |= vectorE.push_back(uint16_t(i+4));
+            failure |= vectorF.push_back(uint32_t(i+5));
+            i++;
+        }
+        vectorB.~Vector();
+        vectorF.~Vector();
+        vectorA.~Vector();
+    }
+    for(uint32_t i = 0;i<vectorD.size();i++) {
+        REQUIRE( vectorD[i] == (uint8_t)i+3);
+    }
+    for(uint32_t i = 0;i<vectorC.size();i++) {
+        REQUIRE( vectorC[i] == (uint32_t)i+2);
+    }
+    for(uint32_t i = 0;i<vectorE.size();i++) {
+        REQUIRE( vectorE[i] == (uint16_t)i+4);
+    }
+
+    uint32_t used = vectorD.size()*sizeof(uint8_t) + vectorC.size()*sizeof(uint32_t) + \
+                    vectorE.size()*sizeof(uint16_t);
+    uint32_t free = (SIZE_ARENA-6*(3*sizeof(arch_t))) - used;
+
+    cus::Vector<uint8_t> vectorG(mockArena);
+    std::cout << used << " " << free << std::endl;
+    for(uint32_t i=0;i<free;i++) {
+        std::cout << i << std::endl;
+        REQUIRE( vectorG.push_back(uint8_t(i)) == false);
+    }
+    REQUIRE( vectorG.push_back(uint8_t(0xA5)) == true);
 }
 
 
