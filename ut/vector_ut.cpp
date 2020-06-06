@@ -9,7 +9,6 @@
 const uint32_t SIZE_ARENA=500;
 const uint32_t END_ARENA=500;
 
-/*
 TEST_CASE( "Basic vector", "Create an empty object" ) {
     char arena[SIZE_ARENA];
     cus::BasicAllocation mockArena(reinterpret_cast<void *>(&arena[0]), \
@@ -130,7 +129,6 @@ TEST_CASE( "Append to another vector", "When append, both objects are available"
     }
 }
 
-*/
 TEST_CASE( "Different types", "Different types of vectors can be created" ) {
     char arena[SIZE_ARENA];
     cus::BasicAllocation mockArena(reinterpret_cast<void *>(&arena[0]), \
@@ -174,15 +172,62 @@ TEST_CASE( "Different types", "Different types of vectors can be created" ) {
 
     uint32_t used = vectorD.size()*sizeof(uint8_t) + vectorC.size()*sizeof(uint32_t) + \
                     vectorE.size()*sizeof(uint16_t);
-    uint32_t free = (SIZE_ARENA-6*(3*sizeof(arch_t))) - used;
+    used+=3*(3*sizeof(arch_t));
+    uint32_t free = SIZE_ARENA - used;
 
     cus::Vector<uint8_t> vectorG(mockArena);
-    std::cout << used << " " << free << std::endl;
+    free-=(3*sizeof(arch_t));
     for(uint32_t i=0;i<free;i++) {
-        std::cout << i << std::endl;
         REQUIRE( vectorG.push_back(uint8_t(i)) == false);
     }
     REQUIRE( vectorG.push_back(uint8_t(0xA5)) == true);
 }
 
 
+
+TEST_CASE( "Erase", "Erase elements" ) {
+    char arena[SIZE_ARENA];
+    cus::BasicAllocation mockArena(reinterpret_cast<void *>(&arena[0]), \
+                                   reinterpret_cast<void *>(&arena[END_ARENA]));
+
+    {
+        const uint8_t elements=10;
+        cus::Vector<uint8_t> vectorA(mockArena);
+        cus::Vector<uint16_t> vectorB(mockArena);
+        cus::Vector<uint32_t> vectorC(mockArena);
+        {
+            uint32_t i=0;
+            while(i<elements) {
+                vectorA.push_back(uint8_t(i));
+                vectorB.push_back(uint16_t(i+1));
+                vectorC.push_back(uint32_t(i+2));
+                i++;
+            }
+
+            for(uint8_t j=0;j<elements-1;j++) {
+                vectorB.erase(0);
+            }
+            REQUIRE( vectorB.size() == 1);
+            REQUIRE( vectorB[0] == 10);
+
+            for(uint8_t j=0;j<elements-1;j++) {
+                vectorA.erase(0);
+            }
+            REQUIRE( vectorA.size() == 1);
+            REQUIRE( vectorA[0] == 9);
+
+            for(uint8_t j=0;j<elements-1;j++) {
+                vectorC.erase(0);
+            }
+            REQUIRE( vectorC.size() == 1);
+            REQUIRE( vectorC[0] == 11);
+        }
+    }
+
+    // Confirm that destructor wipes the arena
+    cus::Vector<uint8_t> vectorA(mockArena);
+    for(uint32_t free=0;free<(SIZE_ARENA-3*sizeof(arch_t));free++) {
+        REQUIRE( vectorA.push_back((uint8_t)0) == false);
+    }
+    REQUIRE( vectorA.push_back((uint8_t)0) == true);
+}
