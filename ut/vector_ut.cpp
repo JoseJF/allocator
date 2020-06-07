@@ -24,6 +24,7 @@ TEST_CASE( "Basic vector", "Create an empty object" ) {
     REQUIRE( oob == false );
 }
 
+
 TEST_CASE( "Initialize the vector", "Construct an initialized object" ) {
     char arena[SIZE_ARENA];
     cus::BasicAllocation mockArena(reinterpret_cast<void *>(&arena[0]), \
@@ -231,3 +232,113 @@ TEST_CASE( "Erase", "Erase elements" ) {
     }
     REQUIRE( vectorA.push_back((uint8_t)0) == true);
 }
+
+TEST_CASE( "Allocate a vector crc", "" ) {
+    char arena[SIZE_ARENA];
+    cus::CrcAllocation mockArena(reinterpret_cast<void *>(&arena[0]), \
+                                   reinterpret_cast<void *>(&arena[END_ARENA]));
+
+    cus::CrcVector<uint8_t> vectorA(mockArena);
+    bool failure = vectorA.push_back(uint8_t(1));
+    bool oob=true;
+    if(failure==false) {
+        REQUIRE( vectorA.at(0,oob) == uint8_t(1) );
+    }
+    REQUIRE( vectorA.size() == 1 );
+    REQUIRE( vectorA.at(0,oob) == 1 );
+    REQUIRE( oob == false );
+}
+
+TEST_CASE( "Initialize the vector crc", "Construct an initialized object" ) {
+    char arena[SIZE_ARENA];
+    cus::CrcAllocation mockArena(reinterpret_cast<void *>(&arena[0]), \
+                                   reinterpret_cast<void *>(&arena[END_ARENA]));
+
+    std::initializer_list<uint8_t> initList{0,1,2,3,4,5,6,7,8,9};
+    cus::CrcVector<uint8_t> vector1(mockArena,initList);
+    bool oob=true;
+
+    for(uint8_t i=0;i<initList.size();i++) {
+        REQUIRE( vector1.at(i,oob) == i );
+    }
+    REQUIRE( vector1.size() == initList.size() );
+}
+
+TEST_CASE( "Used space by vector crc", "A vector can use the whole arena minus metadata" ) {
+    char arena[SIZE_ARENA];
+    cus::CrcAllocation mockArena(reinterpret_cast<void *>(&arena[0]), \
+                                   reinterpret_cast<void *>(&arena[END_ARENA]));
+
+    cus::CrcVector<uint8_t> vector(mockArena);
+
+    uint32_t i=0;
+    while(true) {
+        bool failure = vector.push_back(i);
+        if(failure == true) {
+            REQUIRE( vector.isJeopardized() == true );
+            break;
+        }
+        i++;
+    }
+    REQUIRE( i == ((SIZE_ARENA/2)-4*sizeof(arch_t)) );
+}
+/*
+TEST_CASE( "Destructor for vector crc", "A vector releases the used memory" ) {
+    char arena[SIZE_ARENA];
+    cus::CrcAllocation mockArena(reinterpret_cast<void *>(&arena[0]), \
+                                   reinterpret_cast<void *>(&arena[END_ARENA]));
+
+    uint8_t * firstVector;
+    uint8_t * secondVector;
+    bool oob=true;
+    {
+        const uint8_t mockValue = 0x05;
+        cus::CrcVector<uint8_t> vector(mockArena);
+        vector.push_back(uint8_t(mockValue));
+        vector.push_back(uint8_t(mockValue+1));
+        vector.push_back(uint8_t(mockValue+2));
+        firstVector=(uint8_t *)&vector[0];
+        REQUIRE( vector.at(0,oob) == mockValue );
+        REQUIRE( vector.isJeopardized() == false );
+    }
+
+    {
+        const uint8_t mockValue = 0xA0;
+        cus::CrcVector<uint8_t> vector(mockArena);
+        vector.push_back(uint8_t(mockValue));
+        vector.push_back(uint8_t(mockValue+1));
+        vector.push_back(uint8_t(mockValue+2));
+        secondVector=(uint8_t *)&vector[0];
+        REQUIRE( vector.at(0,oob) == mockValue );
+        REQUIRE( vector.isJeopardized() == false );
+    }
+
+    REQUIRE( firstVector == secondVector );
+    REQUIRE( reinterpret_cast<arch_t>(firstVector) >= \
+              reinterpret_cast<arch_t>(&arena[0]) );
+    REQUIRE( reinterpret_cast<arch_t>(firstVector) <= \
+              reinterpret_cast<arch_t>(&arena[SIZE_ARENA-1]) );
+}
+*/
+TEST_CASE( "Vector crc consistency", "Vector crc is able to recover itself" ) {
+    char arena[SIZE_ARENA];
+    cus::CrcAllocation mockArena(reinterpret_cast<void *>(&arena[0]), \
+                                   reinterpret_cast<void *>(&arena[END_ARENA]));
+
+    const uint8_t sizeVector=100;
+    cus::CrcVector<uint8_t> vector1(mockArena);
+    bool oob=true;
+
+    vector1.resize(sizeVector);
+    for(uint8_t i=0;i<sizeVector;i++) {
+        vector1.set(i,oob,i);
+    }
+
+    // corrupt
+    arena[50] = 0x00;
+
+    for(uint8_t i=0;i<sizeVector;i++) {
+        REQUIRE( vector1.at(i,oob) == i );
+    }
+}
+

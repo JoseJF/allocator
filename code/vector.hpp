@@ -30,15 +30,17 @@
 
 namespace cus {
 
-template <typename T>
+template <typename T, typename A=BasicAllocation>
 class Vector: public Container {
     public:
+        using Container::aMem;
+        using Container::arena;
         /*!
          * @brief   Constructor to receive just an allocator, without initialisers
          * @param   section Reference of an object of typed BasicAllocation
          *          to be used a lower layer to manage the memory
          */
-        explicit Vector(BasicAllocation& section);
+        explicit Vector(A& section);
         /*!
          * @brief   Constructor when receiving an allocator and a list to
          *          initialise the cus::Vector object
@@ -46,7 +48,7 @@ class Vector: public Container {
          *          to be used a lower layer to manage the memory
          * @param   cList object used to initialise the object
          */
-        explicit Vector(BasicAllocation& section,std::initializer_list<T> cList);
+        explicit Vector(A& section,std::initializer_list<T> cList);
         /*!
          * @brief   Destructor to notify the lower layers that the memory used
          *          by the self is not needed anymore and it has to be released
@@ -83,7 +85,7 @@ class Vector: public Container {
          * @param   toAppend cus::Vector<T> which contains the elements to append
          * @return  True if the object is not corrupted. Otherwise, False.
          */
-        virtual bool push_back(Vector<T>& toAppend);
+        virtual bool push_back(Vector<T,A>& toAppend);
         /*!
          * @brief   It assignes more space for the object. The space is based on
          *          the type T, so different bytes might be allocated for the same
@@ -123,7 +125,7 @@ class Vector: public Container {
          *          is bigger than size()
          * @return  The value in index of type T
          */
-        T at(uint32_t index,bool& outOfBoundaries) const;
+        virtual T at(uint32_t index,bool& outOfBoundaries);
         /*!
          * @brief   It return the value of the requested index
          * @param   index Index to return
@@ -131,21 +133,19 @@ class Vector: public Container {
          *          so if index >= size, it's undefined behaviour. For a safe
          *          way, use at()
          */
-        const T& operator[](uint32_t index) const;
+        virtual T& operator[](uint32_t index);
     protected:
-        Vector();
         bool internalFailure;
         uint32_t elements;
-    private:
-        BasicAllocation *arena;
 };
 
 template <typename T>
-class CrcVector: public Vector<T> {
-    using Vector<T>::internalFailure;
-    using Vector<T>::elements;
-    using Vector<T>::aMem;
+class CrcVector: public Vector<T,CrcAllocation> {
     public:
+        using Container::aMem;
+        using Container::arena;
+        using Vector<T,CrcAllocation>::internalFailure;
+        using Vector<T,CrcAllocation>::elements;
         /*!
          * @brief   Constructor to receive just an allocator, without initialisers
          * @param   section Reference of an object of typed BasicAllocation
@@ -164,7 +164,7 @@ class CrcVector: public Vector<T> {
          * @brief   Destructor to notify the lower layers that the memory used
          *          by the self is not needed anymore and it has to be released
          */
-        ~CrcVector();
+        //~CrcVector();
         /*!
          * @brief   Copy constructir
          * @note    Temporally deleted (!0-3-5)
@@ -196,7 +196,7 @@ class CrcVector: public Vector<T> {
          * @param   toAppend cus::Vector<T> which contains the elements to append
          * @return  True if the object is not corrupted. Otherwise, False.
          */
-        bool push_back(Vector<T>& toAppend);
+        bool push_back(CrcVector<T>& toAppend);
         /*!
          * @brief   It assignes more space for the object. The space is based on
          *          the type T, so different bytes might be allocated for the same
@@ -218,24 +218,39 @@ class CrcVector: public Vector<T> {
          * @return  True if the object is not corrupted. Otherwise, False.
          */
         void erase(uint32_t index,bool& erased);
-    protected:
-        CrcVector();
-    private:
-        CrcAllocation *arena;
+        /*!
+         * @brief   It returns the value of the requested index
+         * @param   index Index to return
+         * @param   outOfBoundaries Flag to notify that the requested index
+         *          is bigger than size()
+         * @return  The value in index of type T
+         */
+        T at(uint32_t index,bool& outOfBoundaries);
+
+        void set(uint32_t index, bool& outOfBoundaries, T value);
 };
 
-
 // Valid types
-template class  Vector<int16_t>;
-template class  Vector<uint16_t>;
-template class  Vector<unsigned char>;
-template class  Vector<char>;
-template class  Vector<unsigned int>;
-template class  Vector<int>;
-template class  Vector<unsigned long>;
-template class  Vector<long>;
-template class  Vector<float>;
-template class  Vector<double>;
+template class  Vector<int16_t, BasicAllocation>;
+template class  Vector<uint16_t, BasicAllocation>;
+template class  Vector<unsigned char, BasicAllocation>;
+template class  Vector<char, BasicAllocation>;
+template class  Vector<unsigned int, BasicAllocation>;
+template class  Vector<int, BasicAllocation>;
+template class  Vector<unsigned long, BasicAllocation>;
+template class  Vector<long, BasicAllocation>;
+template class  Vector<float, BasicAllocation>;
+template class  Vector<double, BasicAllocation>;
+template class  Vector<int16_t, CrcAllocation>;
+template class  Vector<uint16_t, CrcAllocation>;
+template class  Vector<unsigned char, CrcAllocation>;
+template class  Vector<char, CrcAllocation>;
+template class  Vector<unsigned int, CrcAllocation>;
+template class  Vector<int, CrcAllocation>;
+template class  Vector<unsigned long, CrcAllocation>;
+template class  Vector<long, CrcAllocation>;
+template class  Vector<float, CrcAllocation>;
+template class  Vector<double, CrcAllocation>;
 
 template class  CrcVector<int16_t>;
 template class  CrcVector<uint16_t>;

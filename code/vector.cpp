@@ -19,23 +19,18 @@
 
 namespace cus {
 
-template <typename T>
-Vector<T>::Vector(){
-
-}
-
-template <typename T>
-Vector<T>::Vector(BasicAllocation& section) {
+template <typename T, typename A>
+Vector<T,A>::Vector(A& section) {
     internalFailure=false;
-    arena = &section;
+    arena = (void *)&section;
     aMem=nullptr;
     elements=0;
 }
 
-template <typename T>
-Vector<T>::Vector(BasicAllocation& section,std::initializer_list<T> cList) {
+template <typename T, typename A>
+Vector<T,A>::Vector(A& section,std::initializer_list<T> cList) {
     internalFailure=false;
-    arena = &section;
+    arena = (void *)&section;
     aMem=nullptr;
     elements=0;
     for (T x : cList) {
@@ -43,21 +38,21 @@ Vector<T>::Vector(BasicAllocation& section,std::initializer_list<T> cList) {
     }
 }
 
-template <typename T>
-Vector<T>::~Vector() {
+template <typename T, typename A>
+Vector<T,A>::~Vector() {
     elements=0;
-    arena->deallocate((arch_t)&aMem);
+    ((A *)arena)->deallocate((arch_t)&aMem);
 }
 
-template <typename T>
-bool Vector<T>::push_back(T value) {
+template <typename T, typename A>
+bool Vector<T,A>::push_back(T value) {
     bool validAlloc = false;
 
     if(elements==0) {
-        validAlloc = arena->allocate((arch_t)&aMem, aMem,sizeof(T));
+        validAlloc = ((A *)arena)->allocate((arch_t)&aMem, aMem,sizeof(T));
     } else {
         std::size_t sizeBytes = elements * sizeof(T);
-        validAlloc = arena->reallocate(aMem,sizeBytes,sizeBytes + sizeof(T));
+        validAlloc = ((A *)arena)->reallocate(aMem,sizeBytes,sizeBytes + sizeof(T));
     }
 
     if(aMem != nullptr && validAlloc==true) {
@@ -70,8 +65,8 @@ bool Vector<T>::push_back(T value) {
     return internalFailure;
 }
 
-template <typename T>
-bool Vector<T>::push_back(Vector<T>& toAppend) {
+template <typename T, typename A>
+bool Vector<T,A>::push_back(Vector<T,A>& toAppend) {
     for(uint32_t idx=0;idx<toAppend.size();idx++) {
         push_back(toAppend[idx]);
     }
@@ -79,16 +74,16 @@ bool Vector<T>::push_back(Vector<T>& toAppend) {
     return internalFailure;
 }
 
-template <typename T>
-bool Vector<T>::resize(uint32_t newElements) {
+template <typename T, typename A>
+bool Vector<T,A>::resize(uint32_t newElements) {
     bool validAlloc = false;
 
 
     if(elements==0) {
-        validAlloc = arena->allocate((arch_t)&aMem, aMem,(newElements * sizeof(T)));
+        validAlloc = ((A *)arena)->allocate((arch_t)&aMem, aMem,(newElements * sizeof(T)));
     } else {
         std::size_t sizeBytes = elements * sizeof(T);
-        validAlloc = arena->reallocate(aMem,sizeBytes,sizeBytes + (newElements*sizeof(T)));
+        validAlloc = ((A *)arena)->reallocate(aMem,sizeBytes,sizeBytes + (newElements*sizeof(T)));
     }
 
     if(aMem != nullptr && validAlloc==true) {
@@ -100,10 +95,10 @@ bool Vector<T>::resize(uint32_t newElements) {
     return internalFailure;
 }
 
-template <typename T>
-void Vector<T>::erase(uint32_t index) {
+template <typename T, typename A>
+void Vector<T,A>::erase(uint32_t index) {
     if(index < elements) {
-        bool removed = arena->removeElement((arch_t)&aMem, \
+        bool removed = ((A *)arena)->removeElement((arch_t)&aMem, \
                                 (void *)((T *)aMem + index), sizeof(T));
         if(removed==true) {
             elements--;
@@ -113,11 +108,11 @@ void Vector<T>::erase(uint32_t index) {
     }
 }
 
-template <typename T>
-void Vector<T>::erase(uint32_t index, bool& erased) {
+template <typename T, typename A>
+void Vector<T,A>::erase(uint32_t index, bool& erased) {
     erased=false;
     if(index < elements) {
-        bool removed = arena->removeElement((arch_t)&aMem, \
+        bool removed = ((A *)arena)->removeElement((arch_t)&aMem, \
                                 (void *)((T *)aMem + index), sizeof(T));
         if(removed==true) {
             elements--;
@@ -128,24 +123,23 @@ void Vector<T>::erase(uint32_t index, bool& erased) {
     }
 }
 
-
-template <typename T>
-std::size_t Vector<T>::size() {
+template <typename T, typename A>
+std::size_t Vector<T,A>::size() {
     return elements;
 }
 
-template <typename T>
-bool Vector<T>::isJeopardized() {
+template <typename T, typename A>
+bool Vector<T,A>::isJeopardized() {
     return internalFailure;
 }
 
-template <typename T>
-const T& Vector<T>::operator[](uint32_t index) const {
+template <typename T, typename A>
+T& Vector<T,A>::operator[](uint32_t index) {
     return *((T *)aMem + index);
 }
 
-template <typename T>
-T Vector<T>::at(uint32_t index,bool& outOfBoundaries) const {
+template <typename T, typename A>
+T Vector<T,A>::at(uint32_t index,bool& outOfBoundaries) {
     if(index<elements) {
         outOfBoundaries=false;
         return *((T *)aMem + index);
@@ -155,50 +149,33 @@ T Vector<T>::at(uint32_t index,bool& outOfBoundaries) const {
 }
 
 
-
 template <typename T>
-CrcVector<T>::CrcVector(CrcAllocation& section) {
-    internalFailure=false;
-    arena = &section;
-    aMem=nullptr;
-    elements=0;
+CrcVector<T>::CrcVector(CrcAllocation& section):Vector<T,CrcAllocation>(section) {
+
 }
 
 template <typename T>
-CrcVector<T>::CrcVector(CrcAllocation& section,std::initializer_list<T> cList) {
-    internalFailure=false;
-    arena = &section;
-    aMem=nullptr;
-    elements=0;
-    for (T x : cList) {
-        push_back(x);
-    }
-}
-
-template <typename T>
-CrcVector<T>::~CrcVector() {
-    elements=0;
-    arena->deallocate((arch_t)&aMem);
+CrcVector<T>::CrcVector(CrcAllocation& section,std::initializer_list<T> cList): \
+        Vector<T,CrcAllocation>(section,cList) {
 }
 
 template <typename T>
 bool CrcVector<T>::push_back(T value) {
     bool validAlloc = false;
 
-    bool crcOk = arena->checkConsistency();
+    bool crcOk = ((CrcAllocation *)arena)->checkConsistency();
     if(crcOk==true) {
-
         if(elements==0) {
-            validAlloc = arena->allocate((arch_t)&aMem, aMem,sizeof(T));
+            validAlloc = ((CrcAllocation *)arena)->allocate((arch_t)&aMem, aMem,sizeof(T));
         } else {
             std::size_t sizeBytes = elements * sizeof(T);
-            validAlloc = arena->reallocate(aMem,sizeBytes,sizeBytes + sizeof(T));
+            validAlloc = ((CrcAllocation *)arena)->reallocate(aMem,sizeBytes,sizeBytes + sizeof(T));
         }
 
         if(aMem != nullptr && validAlloc==true) {
             *(elements + (T *)aMem) = value;
             elements++;
-            arena->updateMirror();
+            ((CrcAllocation *)arena)->updateMirror();
         } else {
             internalFailure=true;
         }
@@ -212,8 +189,7 @@ bool CrcVector<T>::push_back(T value) {
 }
 
 template <typename T>
-bool CrcVector<T>::push_back(Vector<T>& toAppend) {
-    resize(toAppend.size());
+bool CrcVector<T>::push_back(CrcVector<T>& toAppend) {
     for(uint32_t idx=0;idx<toAppend.size();idx++) {
         push_back(toAppend[idx]);
     }
@@ -225,19 +201,19 @@ template <typename T>
 bool CrcVector<T>::resize(uint32_t newElements) {
     bool validAlloc = false;
 
-    bool crcOk = arena->checkConsistency();
+    bool crcOk = ((CrcAllocation *)arena)->checkConsistency();
     if(crcOk==true) {
 
         if(elements==0) {
-            validAlloc = arena->allocate((arch_t)&aMem, aMem,sizeof(T));
+            validAlloc = ((CrcAllocation *)arena)->allocate((arch_t)&aMem, aMem,sizeof(T));
         } else {
             std::size_t sizeBytes = elements * sizeof(T);
-            validAlloc = arena->reallocate(aMem,sizeBytes,sizeBytes + sizeof(T));
+            validAlloc = ((CrcAllocation *)arena)->reallocate(aMem,sizeBytes,sizeBytes + sizeof(T));
         }
 
         if(aMem != nullptr && validAlloc==true) {
             elements++;
-            arena->updateMirror();
+            ((CrcAllocation *)arena)->updateMirror();
         } else {
             internalFailure=true;
         }
@@ -253,13 +229,13 @@ bool CrcVector<T>::resize(uint32_t newElements) {
 template <typename T>
 void CrcVector<T>::erase(uint32_t index) {
     if(index < elements) {
-        bool crcOk = arena->checkConsistency();
+        bool crcOk = ((CrcAllocation *)arena)->checkConsistency();
         if(crcOk==true) {
-            bool removed = arena->removeElement((arch_t)&aMem, \
+            bool removed = ((CrcAllocation *)arena)->removeElement((arch_t)&aMem, \
                                     (void *)((T *)aMem + index), sizeof(T));
             if(removed==true) {
                 elements--;
-                arena->updateMirror();
+                ((CrcAllocation *)arena)->updateMirror();
             } else {
                 internalFailure=true;
             }
@@ -275,14 +251,14 @@ template <typename T>
 void CrcVector<T>::erase(uint32_t index, bool& erased) {
     erased=false;
     if(index < elements) {
-        bool crcOk = arena->checkConsistency();
+        bool crcOk = ((CrcAllocation *)arena)->checkConsistency();
         if(crcOk==true) {
-            bool removed = arena->removeElement((arch_t)&aMem, \
+            bool removed = ((CrcAllocation *)arena)->removeElement((arch_t)&aMem, \
                                     (void *)((T *)aMem + index), sizeof(T));
             if(removed==true) {
                 elements--;
                 erased=true;
-                arena->updateMirror();
+                ((CrcAllocation *)arena)->updateMirror();
             } else {
                 internalFailure=true;
             }
@@ -291,6 +267,41 @@ void CrcVector<T>::erase(uint32_t index, bool& erased) {
             // to workout the jeopardised areas of memory
             internalFailure=true;
         }
+    }
+}
+
+template <typename T>
+T CrcVector<T>::at(uint32_t index,bool& outOfBoundaries) {
+    if(index<elements) {
+        outOfBoundaries=false;
+        bool crcOk = ((CrcAllocation *)arena)->checkConsistency();
+        if(crcOk==true) {
+            return *(elements + (T *)aMem);
+        } else {
+            // This does not have to be an internal failure. The mirror will be used
+            // to workout the jeopardised areas of memory
+            internalFailure=true;
+        }
+    } else {
+        outOfBoundaries=true;
+    }
+}
+
+template <typename T>
+void CrcVector<T>::set(uint32_t index, bool& outOfBoundaries, T value) {
+    if(index<elements) {
+        outOfBoundaries=false;
+        bool crcOk = ((CrcAllocation *)arena)->checkConsistency();
+        if(crcOk==true) {
+            *(elements + (T *)aMem) = value;
+            ((CrcAllocation *)arena)->updateMirror();
+        } else {
+            // This does not have to be an internal failure. The mirror will be used
+            // to workout the jeopardised areas of memory
+            internalFailure=true;
+        }
+    } else {
+        outOfBoundaries=true;
     }
 }
 

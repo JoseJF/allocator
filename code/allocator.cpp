@@ -97,7 +97,6 @@ bool BasicAllocation::allocate(arch_t addrRequester, void*& requester, \
     uint32_t dataSectorSize = lastData;
     uint32_t used = addrSectorSize + dataSectorSize;
 
-    //std::cout << incrementSize<<" "<<addrSectorSize<<" "<<dataSectorSize<<" "<<used<<" "<<sizeArena<< std::endl;
 
     if(sizeArena>=incrementSize+used) {
         // Update pointers
@@ -181,8 +180,6 @@ bool BasicAllocation::reallocate(void*& requester, std::size_t pBytes, \
     if((sizeArena)>=incrementSize+used) {
         itFits=true;
     }
-
-    //std::cout << incrementSize<<" "<<addrSectorSize<<" "<<dataSectorSize<<" "<<used << std::endl;
 
     //move the rest of the data
     if(itFits==true) {

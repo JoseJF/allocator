@@ -36,8 +36,6 @@ TEST_CASE( "Multiple allocations", \
     bool valid_a=mockArena.allocate((arch_t)&mockRequester_a,mockRequester_a,sizeB_mockRequester_a);
     bool valid_b=mockArena.allocate((arch_t)&mockRequester_b,mockRequester_b,sizeB_mockRequester_b);
 
-    //REQUIRE( reinterpret_cast<arch_t>(mockRequester_a) == \
-             (reinterpret_cast<arch_t>(&arena[0]) + sizeof(arch_t)) );
     REQUIRE( reinterpret_cast<arch_t>(mockRequester_a) == \
              (reinterpret_cast<arch_t>(&arena[0]) ) );
     REQUIRE( reinterpret_cast<arch_t>(mockRequester_b) == \
@@ -52,14 +50,12 @@ TEST_CASE( "Max. allocated size", \
     char arena[SIZE_ARENA];
     cus::BasicAllocation mockArena(reinterpret_cast<void *>(&arena[0]), \
                                    reinterpret_cast<void *>(&arena[END_ARENA]));
-
     uint32_t elements=0;
     const std::size_t sizeB_mockRequester=4;
     uint32_t maxAllocations=(((SIZE_ARENA)-(sizeof(arch_t)))/ \
             (sizeB_mockRequester+(3*sizeof(arch_t))));
     while(elements <= maxAllocations) {
         void * mockRequester;
-
         bool valid=mockArena.allocate((arch_t)&mockRequester,mockRequester,sizeB_mockRequester);
         REQUIRE( valid == true );
 
@@ -69,6 +65,33 @@ TEST_CASE( "Max. allocated size", \
     bool valid=mockArena.allocate((arch_t)&mockRequester,mockRequester,sizeB_mockRequester);
     REQUIRE( valid == false );
 }
+
+TEST_CASE( "Arena limits the operations", \
+        "The arena limits all the operations" ) {
+    char arena[SIZE_ARENA*2];
+    cus::BasicAllocation mockArena(reinterpret_cast<void *>(&arena[1]), \
+                                   reinterpret_cast<void *>(&arena[END_ARENA+1]));
+    arena[SIZE_ARENA+1]=0xA5;
+    arena[0]=0xA5;
+
+    uint32_t elements=0;
+    const std::size_t sizeB_mockRequester=4;
+    uint32_t maxAllocations=(((SIZE_ARENA)-(sizeof(arch_t)))/ \
+            (sizeB_mockRequester+(3*sizeof(arch_t))));
+    while(elements <= maxAllocations) {
+        void * mockRequester;
+        bool valid=mockArena.allocate((arch_t)&mockRequester,mockRequester,sizeB_mockRequester);
+        *((char *)mockRequester + elements)=0x5A;
+        REQUIRE( valid == true );
+        elements++;
+    }
+    void * mockRequester;
+    bool valid=mockArena.allocate((arch_t)&mockRequester,mockRequester,sizeB_mockRequester);
+    REQUIRE( valid == false );
+    REQUIRE( ((((uint32_t)arena[SIZE_ARENA+1])<<24)>>24) == (uint32_t)0xA5 );
+    REQUIRE( ((((uint32_t)arena[0])<<24)>>24) == 0xA5 );
+}
+
 
 TEST_CASE( "Clashes passing objects", "the same object cannot allocate two times" ) {
     char arena[SIZE_ARENA];

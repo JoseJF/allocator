@@ -279,7 +279,9 @@ class Container {
         /*!
          * @brief    Pointer to the reserved memory for this object
          */
+    protected:
         void* aMem;
+        void* arena;
 };
 
 
