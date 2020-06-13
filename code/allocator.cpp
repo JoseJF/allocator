@@ -89,27 +89,40 @@ bool BasicAllocation::allocate(arch_t addrRequester, void*& requester, \
         std::size_t nBytes) {
     //std::lock_guard<std::mutex> guard(allocator_mutex);
 
-    bool success=false;
+    bool success=true;
     void * currentFreeAddr = (void *)((uint8_t *)start+lastData);
 
-    uint32_t incrementSize = nBytes;
-    uint32_t addrSectorSize = lastAddr*(sizeof(arch_t));
-    uint32_t dataSectorSize = lastData;
-    uint32_t used = addrSectorSize + dataSectorSize;
+    for(uint32_t i=0;i<lastAddr;i=i+TOTAL_ELEMENTS) {
+        if(addrRequester==end[((sarch_t)i*(-1))-POINTER_TO_REQUESTER]) {
+            success=false;
+            break;
+        }
+    }
 
-    if(sizeArena>(incrementSize+used+3*sizeof(arch_t))) {
-        // Update pointers
-        arch_t *endV = (arch_t *)end;
-        endV[((sarch_t)lastAddr*(-1))-POINTER_TO_DATA]=(arch_t)currentFreeAddr;
-        requester=currentFreeAddr;
-        endV[((sarch_t)lastAddr*(-1))-DATA_SIZE]=nBytes;
-        endV[((sarch_t)lastAddr*(-1))-POINTER_TO_REQUESTER]=(arch_t)addrRequester;
-        // Update Add
-        lastAddr+=TOTAL_ELEMENTS;
-        // Update data
-        lastData += nBytes;
+    if(success==true) {
+        uint32_t incrementSize = nBytes;
+        uint32_t addrSectorSize = lastAddr*(sizeof(arch_t));
+        uint32_t dataSectorSize = lastData;
+        uint32_t used = addrSectorSize + dataSectorSize;
 
-        success=true;
+        //std::cout << sizeArena << " " << (incrementSize+used+TOTAL_ELEMENTS*sizeof(arch_t)) \
+            << std::endl;
+
+        if(sizeArena>=(incrementSize+used+TOTAL_ELEMENTS*sizeof(arch_t))) {
+            // Update pointers
+            arch_t *endV = (arch_t *)end;
+            endV[((sarch_t)lastAddr*(-1))-POINTER_TO_DATA]=(arch_t)currentFreeAddr;
+            requester=currentFreeAddr;
+            endV[((sarch_t)lastAddr*(-1))-DATA_SIZE]=nBytes;
+            endV[((sarch_t)lastAddr*(-1))-POINTER_TO_REQUESTER]=(arch_t)addrRequester;
+            // Update Add
+            lastAddr+=TOTAL_ELEMENTS;
+            // Update data
+            lastData += nBytes;
+
+        } else {
+            success=false;
+        }
     }
 
     return success;

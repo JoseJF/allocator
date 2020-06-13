@@ -9,7 +9,6 @@
 const uint32_t SIZE_ARENA=500;
 const uint32_t END_ARENA=500;
 
-
 TEST_CASE( "Basic vector", "Create an empty object" ) {
     char arena[SIZE_ARENA];
     cus::BasicAllocation mockArena(reinterpret_cast<void *>(&arena[0]), \
@@ -328,7 +327,7 @@ TEST_CASE( "Vector crc consistency", "Vector crc is able to recover itself" ) {
     cus::CrcAllocation mockArena(reinterpret_cast<void *>(&arena[0]), \
                                    reinterpret_cast<void *>(&arena[END_ARENA]));
 
-    const uint8_t sizeVector=(SIZE_ARENA/2)-(sizeof(arch_t)+3*sizeof(arch_t));
+    const uint8_t sizeVector=(SIZE_ARENA/2)-(sizeof(arch_t)+(3*sizeof(arch_t)));
     cus::CrcVector<uint8_t> vector1(mockArena);
     bool oob=true;
     vector1.resize(sizeVector);
