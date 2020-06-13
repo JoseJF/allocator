@@ -97,8 +97,7 @@ bool BasicAllocation::allocate(arch_t addrRequester, void*& requester, \
     uint32_t dataSectorSize = lastData;
     uint32_t used = addrSectorSize + dataSectorSize;
 
-
-    if(sizeArena>=incrementSize+used) {
+    if(sizeArena>(incrementSize+used+3*sizeof(arch_t))) {
         // Update pointers
         arch_t *endV = (arch_t *)end;
         endV[((sarch_t)lastAddr*(-1))-POINTER_TO_DATA]=(arch_t)currentFreeAddr;
@@ -180,7 +179,6 @@ bool BasicAllocation::reallocate(void*& requester, std::size_t pBytes, \
     if((sizeArena)>=incrementSize+used) {
         itFits=true;
     }
-
     //move the rest of the data
     if(itFits==true) {
         arch_t numberOfObjects=(lastAddr)/TOTAL_ELEMENTS;
@@ -352,10 +350,14 @@ CrcAllocation::CrcAllocation(const void *startSection,const void *endSection) {
     sizeArena=((((arch_t)endSection)-(arch_t)startSection)/2)-sizeof(arch_t);
     startCRC=((arch_t *)startSection);
     start=((arch_t *)(((arch_t)startCRC)+sizeof(arch_t)));
-    end=((arch_t *)((arch_t)startCRC+sizeArena));
-    startMirrorCRC=((arch_t *)((arch_t)end+sizeof(arch_t))); // end goes backwards
+    end=((arch_t *)((arch_t)start+sizeArena));
+    startMirrorCRC=((arch_t *)((arch_t)end)); // end goes backwards
     startMirror=((arch_t *)((arch_t)startMirrorCRC + sizeof(arch_t)));
-    endMirror=((arch_t *)((arch_t)startMirrorCRC+sizeArena));
+    endMirror=((arch_t *)((arch_t)startMirror+sizeArena));
+
+    if(endMirror != endSection) {
+        std::cout << "REPORT ERROR" << std::endl;
+    }
 
     lastData=0;
     lastAddr=0;
@@ -366,6 +368,7 @@ CrcAllocation::CrcAllocation(const void *startSection,const void *endSection) {
 void CrcAllocation::updateMirror() {
     //std::lock_guard<std::mutex> guard(allocator_mutex);
 
+    // This will have to copy only the modified
     memcpyMirror((void*)startMirror,(const void*)start, \
                  sizeArena);
     uint32_t crcOrig = crc32((const void *)(start),(const void *)((arch_t)end-1));
@@ -391,11 +394,11 @@ bool CrcAllocation::checkConsistency() {
     } else if ((*startCRC != (arch_t)crcOrig) && \
             (*startMirrorCRC == (arch_t)crcMirror)) {
         memcpyMirror((void*)start,(const void*)startMirror, \
-                     ((arch_t)end-(arch_t)start)-sizeof(arch_t));
+                     sizeArena);
     } else if((*startMirrorCRC != (arch_t)crcMirror) && \
             (*startCRC==(arch_t)crcOrig)) {
         memcpyMirror((void*)startMirror,(const void*)start, \
-                     ((arch_t)end-(arch_t)start)-sizeof(arch_t));
+                     sizeArena);
     } else {
         pass=false;
     }

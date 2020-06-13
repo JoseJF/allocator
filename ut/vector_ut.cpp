@@ -9,6 +9,7 @@
 const uint32_t SIZE_ARENA=500;
 const uint32_t END_ARENA=500;
 
+
 TEST_CASE( "Basic vector", "Create an empty object" ) {
     char arena[SIZE_ARENA];
     cus::BasicAllocation mockArena(reinterpret_cast<void *>(&arena[0]), \
@@ -244,6 +245,7 @@ TEST_CASE( "Allocate a vector crc", "" ) {
     if(failure==false) {
         REQUIRE( vectorA.at(0,oob) == uint8_t(1) );
     }
+    REQUIRE( failure == false );
     REQUIRE( vectorA.size() == 1 );
     REQUIRE( vectorA.at(0,oob) == 1 );
     REQUIRE( oob == false );
@@ -259,7 +261,8 @@ TEST_CASE( "Initialize the vector crc", "Construct an initialized object" ) {
     bool oob=true;
 
     for(uint8_t i=0;i<initList.size();i++) {
-        REQUIRE( vector1.at(i,oob) == i );
+
+        REQUIRE( vector1.at((uint32_t)i,oob) == i );
     }
     REQUIRE( vector1.size() == initList.size() );
 }
@@ -282,7 +285,7 @@ TEST_CASE( "Used space by vector crc", "A vector can use the whole arena minus m
     }
     REQUIRE( i == ((SIZE_ARENA/2)-4*sizeof(arch_t)) );
 }
-/*
+
 TEST_CASE( "Destructor for vector crc", "A vector releases the used memory" ) {
     char arena[SIZE_ARENA];
     cus::CrcAllocation mockArena(reinterpret_cast<void *>(&arena[0]), \
@@ -319,26 +322,66 @@ TEST_CASE( "Destructor for vector crc", "A vector releases the used memory" ) {
     REQUIRE( reinterpret_cast<arch_t>(firstVector) <= \
               reinterpret_cast<arch_t>(&arena[SIZE_ARENA-1]) );
 }
-*/
+
 TEST_CASE( "Vector crc consistency", "Vector crc is able to recover itself" ) {
     char arena[SIZE_ARENA];
     cus::CrcAllocation mockArena(reinterpret_cast<void *>(&arena[0]), \
                                    reinterpret_cast<void *>(&arena[END_ARENA]));
 
-    const uint8_t sizeVector=100;
+    const uint8_t sizeVector=(SIZE_ARENA/2)-(sizeof(arch_t)+3*sizeof(arch_t));
     cus::CrcVector<uint8_t> vector1(mockArena);
     bool oob=true;
-
     vector1.resize(sizeVector);
-    for(uint8_t i=0;i<sizeVector;i++) {
+    for(uint32_t i=0;i<sizeVector;i++) {
         vector1.set(i,oob,i);
+        REQUIRE( oob == false );
     }
 
     // corrupt
-    arena[50] = 0x00;
-
-    for(uint8_t i=0;i<sizeVector;i++) {
-        REQUIRE( vector1.at(i,oob) == i );
+    for(uint32_t i=sizeof(arch_t);i<sizeVector+sizeof(arch_t);i++) {
+        arena[i]=0xFF;
     }
+    for(uint32_t i=0;i<sizeVector;i++) {
+        REQUIRE( (uint32_t)vector1.at(i,oob) == (uint32_t)i );
+    }
+
+    // corrupt the whole 1st half arena
+    for(uint32_t i=sizeof(arch_t);i<((SIZE_ARENA/2)-1);i++) {
+        arena[i]=0xFF;
+    }
+    for(uint32_t i=0;i<sizeVector;i++) {
+        REQUIRE( (uint32_t)vector1.at(i,oob) == (uint32_t)i );
+    }
+
+    // corrupt the whole 2nd half arena
+    for(uint32_t i=(SIZE_ARENA/2)+sizeof(arch_t);i<SIZE_ARENA;i++) {
+        arena[i]=0x55;
+    }
+    arena[SIZE_ARENA] = 0x55;
+
+    for(uint32_t i=0;i<sizeVector;i++) {
+        REQUIRE( (uint32_t)vector1.at(i,oob) == (uint32_t)i );
+    }
+    REQUIRE( (uint32_t)arena[SIZE_ARENA] == (uint32_t)0x55 );
 }
 
+TEST_CASE( "Vector crc erase", "Basic erase" ) {
+    char arena[SIZE_ARENA];
+    cus::CrcAllocation mockArena(reinterpret_cast<void *>(&arena[0]), \
+                                   reinterpret_cast<void *>(&arena[END_ARENA]));
+
+    const uint8_t sizeVector=(SIZE_ARENA/2)-(sizeof(arch_t)+3*sizeof(arch_t));
+    cus::CrcVector<uint8_t> vector1(mockArena);
+
+    for(uint32_t i=0;i<sizeVector;i++) {
+        REQUIRE( vector1.push_back((uint8_t)i) == false );
+    }
+    REQUIRE( (uint32_t)vector1.size() == (uint32_t)sizeVector );
+
+    for(uint32_t i=0;i<sizeVector-1;i++) {
+        vector1.erase(0);
+    }
+
+    REQUIRE( vector1.size() == 1 );
+    REQUIRE( vector1[0] == sizeVector-1 );
+}

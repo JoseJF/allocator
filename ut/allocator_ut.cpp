@@ -45,20 +45,18 @@ TEST_CASE( "Multiple allocations", \
 }
 
 TEST_CASE( "Max. allocated size", \
-        "sizeArena/2 >= (allocations*size) + \
-        (allocations * 3 * sizeof(arch_t)) + (2 * sizeof(arch_t))" ) {
+        "sizeArena >= (allocations*size) + \
+        (allocations * 3 * sizeof(arch_t)) )" ) {
     char arena[SIZE_ARENA];
     cus::BasicAllocation mockArena(reinterpret_cast<void *>(&arena[0]), \
                                    reinterpret_cast<void *>(&arena[END_ARENA]));
     uint32_t elements=0;
     const std::size_t sizeB_mockRequester=4;
-    uint32_t maxAllocations=(((SIZE_ARENA)-(sizeof(arch_t)))/ \
-            (sizeB_mockRequester+(3*sizeof(arch_t))));
-    while(elements <= maxAllocations) {
+    uint32_t maxAllocations=((SIZE_ARENA / (sizeB_mockRequester+3*sizeof(arch_t)) ));
+    while(elements < maxAllocations) {
         void * mockRequester;
         bool valid=mockArena.allocate((arch_t)&mockRequester,mockRequester,sizeB_mockRequester);
         REQUIRE( valid == true );
-
         elements++;
     }
     void * mockRequester;
@@ -76,9 +74,8 @@ TEST_CASE( "Arena limits the operations", \
 
     uint32_t elements=0;
     const std::size_t sizeB_mockRequester=4;
-    uint32_t maxAllocations=(((SIZE_ARENA)-(sizeof(arch_t)))/ \
-            (sizeB_mockRequester+(3*sizeof(arch_t))));
-    while(elements <= maxAllocations) {
+    uint32_t maxAllocations=((SIZE_ARENA)/ (sizeB_mockRequester+(3*sizeof(arch_t))));
+    while(elements < maxAllocations) {
         void * mockRequester;
         bool valid=mockArena.allocate((arch_t)&mockRequester,mockRequester,sizeB_mockRequester);
         *((char *)mockRequester + elements)=0x5A;
@@ -593,7 +590,7 @@ TEST_CASE( "Max. CrcAllocates size", \
         void * mockRequester;
         bool valid=mockArena.allocate((arch_t)&mockRequester,mockRequester,sizeB_mockRequester);
 
-        if(elements<=maxAllocations) {
+        if(elements<maxAllocations) {
             REQUIRE( valid == true );
         } else {
             REQUIRE( valid == false );

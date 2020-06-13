@@ -35,7 +35,7 @@ void * MemoryMgmt::memcpyMirror(void *dest, const void *src, size_t len) {
         char *d = (char *)dest+len;
         const char *s = (char *)src+len;
         while (len--)
-            *d-- = ~(*s--);
+            *--d = ~(*--s);
         return (void *)dest;
     }
 }

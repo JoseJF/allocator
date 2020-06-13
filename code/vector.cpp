@@ -78,16 +78,17 @@ template <typename T, typename A>
 bool Vector<T,A>::resize(uint32_t newElements) {
     bool validAlloc = false;
 
-
     if(elements==0) {
-        validAlloc = ((A *)arena)->allocate((arch_t)&aMem, aMem,(newElements * sizeof(T)));
+        validAlloc = ((A *)arena)->allocate((arch_t)&aMem, aMem,\
+                (newElements * sizeof(T)));
     } else {
         std::size_t sizeBytes = elements * sizeof(T);
-        validAlloc = ((A *)arena)->reallocate(aMem,sizeBytes,sizeBytes + (newElements*sizeof(T)));
+        validAlloc = ((A *)arena)->reallocate(aMem,sizeBytes,\
+                sizeBytes + (newElements*sizeof(T)));
     }
 
     if(aMem != nullptr && validAlloc==true) {
-        elements++;
+        elements=elements+newElements;
     } else {
         internalFailure=true;
     }
@@ -157,6 +158,7 @@ CrcVector<T>::CrcVector(CrcAllocation& section):Vector<T,CrcAllocation>(section)
 template <typename T>
 CrcVector<T>::CrcVector(CrcAllocation& section,std::initializer_list<T> cList): \
         Vector<T,CrcAllocation>(section,cList) {
+    ((CrcAllocation *)arena)->updateMirror();
 }
 
 template <typename T>
@@ -166,10 +168,12 @@ bool CrcVector<T>::push_back(T value) {
     bool crcOk = ((CrcAllocation *)arena)->checkConsistency();
     if(crcOk==true) {
         if(elements==0) {
-            validAlloc = ((CrcAllocation *)arena)->allocate((arch_t)&aMem, aMem,sizeof(T));
+            validAlloc = ((CrcAllocation *)arena)->allocate((arch_t)&aMem, \
+                    aMem,sizeof(T));
         } else {
             std::size_t sizeBytes = elements * sizeof(T);
-            validAlloc = ((CrcAllocation *)arena)->reallocate(aMem,sizeBytes,sizeBytes + sizeof(T));
+            validAlloc = ((CrcAllocation *)arena)->reallocate(aMem,sizeBytes, \
+                    sizeBytes + sizeof(T));
         }
 
         if(aMem != nullptr && validAlloc==true) {
@@ -205,14 +209,16 @@ bool CrcVector<T>::resize(uint32_t newElements) {
     if(crcOk==true) {
 
         if(elements==0) {
-            validAlloc = ((CrcAllocation *)arena)->allocate((arch_t)&aMem, aMem,sizeof(T));
+            validAlloc = ((CrcAllocation *)arena)->allocate((arch_t)&aMem, \
+                    aMem,(newElements*sizeof(T)));
         } else {
             std::size_t sizeBytes = elements * sizeof(T);
-            validAlloc = ((CrcAllocation *)arena)->reallocate(aMem,sizeBytes,sizeBytes + sizeof(T));
+            validAlloc = ((CrcAllocation *)arena)->reallocate(aMem, \
+                    sizeBytes,sizeBytes + (newElements*sizeof(T)));
         }
 
         if(aMem != nullptr && validAlloc==true) {
-            elements++;
+            elements=newElements+elements;
             ((CrcAllocation *)arena)->updateMirror();
         } else {
             internalFailure=true;
@@ -276,7 +282,7 @@ T CrcVector<T>::at(uint32_t index,bool& outOfBoundaries) {
         outOfBoundaries=false;
         bool crcOk = ((CrcAllocation *)arena)->checkConsistency();
         if(crcOk==true) {
-            return *(elements + (T *)aMem);
+            return *(index + (T *)aMem);
         } else {
             // This does not have to be an internal failure. The mirror will be used
             // to workout the jeopardised areas of memory
@@ -293,7 +299,7 @@ void CrcVector<T>::set(uint32_t index, bool& outOfBoundaries, T value) {
         outOfBoundaries=false;
         bool crcOk = ((CrcAllocation *)arena)->checkConsistency();
         if(crcOk==true) {
-            *(elements + (T *)aMem) = value;
+            *(index + (T *)aMem) = value;
             ((CrcAllocation *)arena)->updateMirror();
         } else {
             // This does not have to be an internal failure. The mirror will be used
