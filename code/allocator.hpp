@@ -154,33 +154,6 @@ class BasicAllocation: public MathArch, public MemoryMgmt {
          */
         uint32_t elements();
         /*!
-         * @brief   It provides the amount of bytes reserved for an element
-         * @note    This function might provide sensible information to
-         *          another elementz
-         */
-        uint32_t sizeElement(void*& requester);
-        /*!
-         * @brief   If the object was created in double copy mode, 
-         *          this member will update the mirroring and recalculate the
-         *          CRCs.
-         *          It means that this member has to be called when the memory is
-         *          written in order to update the status
-         */
-        void updateMirror();
-        /*!
-         * @brief   If the object was created in double copu mode,
-         *          this membre will check the arena, in order to work out if the
-         *          current situation is the expected situation.
-         *          If one of the copies does not match, it will overwrite it,
-         *          using the information from the valid copy (in which the CRC
-         *          matchs).
-         *          If both copies does not match, it will consider the arena
-         *          as corruptede and it will notify it to upper layers
-         * @return  True if the consistency is valid or it was able to restore it.
-         *          Otherwise, False.
-         */
-        bool checkConsistency();
-        /*!
          * @brief   Debugging purposes
          */
         void showMap();
