@@ -1,0 +1,148 @@
+\PassOptionsToPackage{table,x11names}{xcolor}
+\documentclass[a4paper,11pt]{article}
+\usepackage{blindtext}
+\usepackage[T1]{fontenc}
+\usepackage{tikz}
+\usepackage{titlesec}
+\usepackage{textcomp}
+\usepackage{amsmath}
+\usepackage{float}
+\usepackage{array}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+\usepackage{graphicx}
+\usepackage{tocloft}
+\usepackage[export]{adjustbox}
+\usepackage{enumitem}
+\usepackage[utf8]{inputenc}
+\usepackage{fancyhdr}
+\usepackage{graphicx, wrapfig, subcaption, setspace, booktabs}
+\usepackage[english]{babel}
+\usepackage{sectsty}
+\usepackage{url, lipsum}
+\usepackage{tgbonum}
+\usepackage{makecell}
+\usepackage[normalem]{ulem}
+\usepackage[hidelinks]{hyperref}
+\usepackage{xcolor}
+\usepackage{vhistory}
+\usepackage[acronym]{glossaries}
+\usepackage[table, x11names]{xcolor}
+\usepackage{array, booktabs, boldline}
+\usepackage{cellspace}
+\makenoidxglossaries
+\setlength\cellspacetoplimit{4pt}
+\setlength\cellspacebottomlimit{4pt}
+
+
+%-------------------------------------------------------------------------------
+% ACC
+%-------------------------------------------------------------------------------
+\newacronym{LLD}       {LLD}        {Low Level Design}
+
+%-------------------------------------------------------------------------------
+% HEADER & FOOTER
+%-------------------------------------------------------------------------------
+\pagestyle{fancy}
+\fancyhf{}
+\setlength\headheight{15pt}
+\fancyhead[L]{:=) }
+\pagestyle{fancy}
+ \fancyfoot[C]{\thepage}
+
+
+%-------------------------------------------------------------------------------
+% TITLE PAGE
+%-------------------------------------------------------------------------------
+
+\title{Low level design \\
+\large Allocator }
+\author{ Me, myself and Irene  }
+\date{\today}
+
+
+%-------------------------------------------------------------------------------
+% BODY
+%-------------------------------------------------------------------------------
+
+
+\newenvironment{conditions}
+  {\par\vspace{\abovedisplayskip}\noindent\begin{tabular}{>{$}l<{$} @{${}={}$} l}}
+  {\end{tabular}\par\vspace{\belowdisplayskip}}
+
+\begin{document}
+
+% Title
+\maketitle
+\newpage
+\begin{versionhistory}
+  \vhEntry{1.0}{20 March 2020}{JF}{First draft}
+\end{versionhistory}
+\setcounter{tocdepth}{4}
+\setcounter{secnumdepth}{4}
+\newpage
+% Contents
+\tableofcontents{}
+\listoffigures 
+\listoftables
+\printnoidxglossary[type=acronym]
+\newpage
+
+% Main
+
+% Section
+\section{Design}
+\subsection{Standards}
+This code uses C++11 standards
+
+\subsection{Software tools}
+\begin{itemize}
+\item Compiler: GNU C++
+\item Linker: GNU LD
+\item Make: GNU Make
+\end{itemize}
+
+\subsection{Constrains}
+
+% Section
+\section{Architectural diagram}
+
+
+% Section
+\section{Class diagram}
+Include here the class diag
+
+% Section
+\section{Components}
+In order to define an environment, there are two main layers in the architectural diagram. These two main layers are:
+          \begin{enumerate}
+    	    \item Allocation: Components to deal with the physical memory
+	          \begin{enumerate}
+	    	    \item BasicAllocation: basic way of allocating. There are not safety mechanisms, so corrupted data won't be restored or notified.
+	              \item CrcAllocation: safety way of allocating. There are safety mechanisms, so the arena will create a mirror of the data field. If one of the mirrors is corrupted, it will be restored using the other valid mirror without notifying to upper layers. However, if both mirrors are corrupted and restoring is not possible, an error will be sent to upper layers.
+	         \end{enumerate}
+              \item Container: Components to store a collection of other objects
+	          \begin{enumerate}
+	    	    \item Vector: vector(based on std::vector)  which will land onto a BasisAllocation arena
+	               \item CrcVector: vector(based on std::vector)  which will land onto a CrcAllocation arena
+	               \item String: string(based on std::string)  which will land onto a BasisAllocation arena
+	              \item CrcString: string(based on std::string)  which will land onto a CrcAllocation arena
+	               \item Array: array(based on std::array)  which will land onto a BasisAllocation arena
+	              \item CrcArray: string(based on std::array)  which will land onto a CrcAllocation arena
+	         \end{enumerate}
+         \end{enumerate}
+\section{Allocation}
+Allocations will lookf for the closest available address in order to assign it to the requester. It has to control how much space is available and how much elements are already in. One of the premises is to completely avoid the memory fragmentation, so Allocators will be able to move all the data in order to ensure that there are not holes.
+\subsection{BasicAllocation}
+
+\subsection{CrcAllocation}
+
+\section{Container}
+\subsection{Vector}
+\subsection{CrcVector}
+\subsection{String}
+\subsection{CrcString}
+\subsection{Array}
+\subsection{CrcArray}
+
+\end{document}
