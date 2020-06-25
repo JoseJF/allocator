@@ -1,0 +1,216 @@
+\PassOptionsToPackage{table,x11names}{xcolor}
+\documentclass[a4paper,11pt]{article}
+\usepackage{blindtext}
+\usepackage[T1]{fontenc}
+\usepackage{tikz}
+\usepackage{titlesec}
+\usepackage{textcomp}
+\usepackage{amsmath}
+\usepackage{float}
+\usepackage{array}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+\usepackage[normalem]{ulem}
+\usepackage{graphicx}
+\usepackage{tocloft}
+\usepackage[export]{adjustbox}
+\usepackage{enumitem}
+\usepackage[utf8]{inputenc}
+\usepackage{fancyhdr}
+\usepackage{graphicx, wrapfig, subcaption, setspace, booktabs}
+\usepackage[english]{babel}
+\usepackage{sectsty}
+\usepackage{url, lipsum}
+\usepackage{tgbonum}
+\usepackage{makecell}
+\usepackage[hidelinks]{hyperref}
+\usepackage{xcolor}
+\usepackage{vhistory}
+\usepackage[acronym]{glossaries}
+\usepackage[table, x11names]{xcolor}
+\usepackage{array, booktabs, boldline}
+\usepackage{cellspace}
+\makenoidxglossaries
+\setlength\cellspacetoplimit{4pt}
+\setlength\cellspacebottomlimit{4pt}
+
+
+%-------------------------------------------------------------------------------
+% ACC
+%-------------------------------------------------------------------------------
+
+%-------------------------------------------------------------------------------
+% HEADER & FOOTER
+%-------------------------------------------------------------------------------
+\pagestyle{fancy}
+\fancyhf{}
+\setlength\headheight{15pt}
+\fancyhead[L]{:=) }
+\pagestyle{fancy}
+ \fancyfoot[C]{\thepage}
+
+
+%-------------------------------------------------------------------------------
+% TITLE PAGE
+%-------------------------------------------------------------------------------
+
+\title{System requirements \\
+\large Allocator }
+\author{ Me, myself and Irene  }
+\date{\today}
+
+
+%-------------------------------------------------------------------------------
+% BODY
+%-------------------------------------------------------------------------------
+
+
+\newenvironment{conditions}
+  {\par\vspace{\abovedisplayskip}\noindent\begin{tabular}{>{$}l<{$} @{${}={}$} l}}
+  {\end{tabular}\par\vspace{\belowdisplayskip}}
+
+\begin{document}
+
+% Title
+\maketitle
+\newpage
+\begin{versionhistory}
+  \vhEntry{1.0}{10 March 2020}{JF}{First draft}
+\end{versionhistory}
+\setcounter{tocdepth}{4}
+\setcounter{secnumdepth}{4}
+\newpage
+% Contents
+\tableofcontents{}
+\listoffigures 
+\listoftables
+\printnoidxglossary[type=acronym]
+\newpage
+
+% Main
+
+% Intro
+\section{Introduction}
+This projects pretends to test the viability of using dynamic allocations in a complete controlled environment on embedded systems.
+\subsection{Overview}
+Embedded code uses to run on embedded systems, hence, embedded code runs on machines with limited resources. It means that the amount of needed resources has to be predictable, anytime, in order to avoid corruptions, overflows, traps, etc.
+Considering this, dynamic allocations should be avoided (mainly into the heap, but we might add the stack too), in order to ensure that the available resources are enough to carry on with the execution of the program without getting critical failures, we may consider that running out resources is not critical  as long as 1)the critical tasks are already running with the necessary amount of resources 2) there is not going to be new critical tasks until resources are available 3) the lack of resources for non-critical task won't affect the execution of critical tasks.
+Talking about memory, if we are able to sort out all the tasks based on their severity and group them into different groups, we would be able to assign different levels of criticalness to different groups of tasks, so a group of tasks could run out of memory, but only this group will be affected, hence, we would be able to use dynamic memory for some groups of tasks and implement safety strategies for another group of tasks, being all of them independent from each other.
+\subsection{Purpose}
+The purpose of this project is to \sout{shits and giggles} see how much possible is to bring the advantages of standard (and dynamic) containers like std::vector or std::string into the embedded world, avoiding their disadvantages (from the embedded point of view). So, the possibility of creating unlimited "heaps", landed on the addresses defined by the user, in which an overflows on the "heap(n)" won't affect the heap(n-1) either heap(n+1) could be a solution for it. Furthermore, the module to allocate memory may be able to check the integrity of the data and aligning options (or mandatory) for faster/smaller arenas.
+Briefly, this projects pretends to add basic MPU, basic MMU and basic std containers through software to embedded environments.
+
+\section{Requirements}
+
+\subsection{Allocation}
+
+\subsubsection{REQ\_ALLO\_01}
+Arena has to land on the exact area the user wants
+
+\subsubsection{REQ\_ALLO\_01}
+Arena references to physical address
+
+\subsubsection{REQ\_ALLO\_01}
+Arena may be defined through the linker
+
+\subsubsection{REQ\_ALLO\_01}
+Arena may be defined through the stack
+
+\subsubsection{REQ\_ALLO\_01}
+Arena may be defined through the heap
+
+\subsubsection{REQ\_ALLO\_01}
+Arena may be defined through global data
+
+\subsubsection{REQ\_ALLO\_01}
+Dynamic allocations into the arena are allowed
+
+\subsubsection{REQ\_ALLO\_01}
+Static allocations into the arena are allowed
+
+\subsubsection{REQ\_ALLO\_01}
+Dynamic deallocations are allowed
+
+\subsubsection{REQ\_ALLO\_01}
+Arena has to reduce the fragmentation to zero
+
+\subsubsection{REQ\_ALLO\_01}
+Elemets into the arena can be partialy erased
+
+\subsubsection{REQ\_ALLO\_01}
+Elements into the arena may be moved to another location
+
+\subsubsection{REQ\_ALLO\_01}
+Arena takes the ownership of the contained data
+
+\subsubsection{REQ\_ALLO\_01}
+When arena gets out of scope, contained objects are destroyed
+
+\subsubsection{REQ\_ALLO\_01}
+Arena has to provide safety mechanisms
+
+\subsubsection{REQ\_ALLO\_01}
+Arena offers the possibility to restore the data if it is not seriously damaged
+
+\subsubsection{REQ\_ALLO\_01}
+User is able to create as many arenas as he wants or the amount of memory allows
+
+
+
+\subsection{Containers}
+
+\subsubsection{REQ\_ALLO\_01}
+Vector container has to be available
+
+\subsubsection{REQ\_ALLO\_01}
+Array container is avaialbe
+
+\subsubsection{REQ\_ALLO\_01}
+String container is available
+
+\subsubsection{REQ\_ALLO\_01}
+All the containers will have a safety version
+
+\subsubsection{REQ\_ALLO\_01}
+Vector object will contain one type of datatype
+
+\subsubsection{REQ\_ALLO\_01}
+Array object will contain one type of datatype
+
+\subsubsection{REQ\_ALLO\_01}
+String object will only contain chars
+
+\subsubsection{REQ\_ALLO\_01}
+Vector and String containers will allow dynamic tasks
+
+\subsubsection{REQ\_ALLO\_01}
+Lifespan of the array containers will be the same than the arena where they are
+
+\subsubsection{REQ\_ALLO\_01}
+Array size won't be modifiable
+
+\subsubsection{REQ\_ALLO\_01}
+Write a safety container will be slower than its non safety version
+
+\subsubsection{REQ\_ALLO\_01}
+Containers won't allow access out of their boundaries
+
+\subsubsection{REQ\_ALLO\_01}
+Safety containers will be able to restore data unless critical overwriting
+
+\subsubsection{REQ\_ALLO\_01}
+Arena will be able to modify the location of the allocated memory of Vector and String containers at runtime
+
+\subsubsection{REQ\_ALLO\_01}
+Arena won't be able to modify the location of the allocated memory of Vector and String containers at runtime
+
+\subsubsection{REQ\_ALLO\_01}
+User is able to remove elements in Vector or String
+
+\subsubsection{REQ\_ALLO\_01}
+User is able to append elements in Vector or String
+
+\subsubsection{REQ\_ALLO\_01}
+User is able to append Vector in Vector or String in String
+
+\end{document}
