@@ -53,7 +53,7 @@ class Vector: public Container {
          * @brief   Destructor to notify the lower layers that the memory used
          *          by the self is not needed anymore and it has to be released
          */
-        ~Vector();
+        virtual ~Vector();
         /*!
          * @brief   Copy constructir
          * @note    Temporally deleted (!0-3-5)

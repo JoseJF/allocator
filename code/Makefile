@@ -46,10 +46,8 @@ $(OUTDIR)/%.o: $(SOURCES)
 	$(CC) $(CFLAGS) $< -o $(OUTDIR) $(LIBPATH) $(LIBS)
 
 $(OUTDIR)/$(TARGET).out: $(OBJS)
-	$(LD) $(INCLUDES) $(DBGFLAGS) -o $@ $^ $(LDFLAGS)
-
-${OUTDIR}:
 	${MKDIR} ${OUTDIR}
+	$(LD) $(INCLUDES) $(DBGFLAGS) -o $@ $^ $(LDFLAGS)
 
 clean:
 	-$(RM) $(OUTDIR)/*
@@ -60,7 +58,6 @@ exe:
 
 gdb:
 	gdb ./$(OUTDIR)/$(TARGET).out
-
 
 hardclean:
 	-$(RM) $(OUTDIR)/*

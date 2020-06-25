@@ -54,11 +54,9 @@ $(OUTDIR)/%.o: $(SOURCES)
 	$(CC) $(CFLAGS) $< -o $(OUTDIR) $(LIBPATH) $(LIBS)
 
 $(OUTDIR)/$(TARGET).out: $(OBJS)
+	${MKDIR} ${OUTDIR}
 	$(LD) $(INCLUDES) $(DBGFLAGS) -o $@ $^ $(LDFLAGS)
 	./$(SRC)/$(SRC)_unitTest.out
-
-${OUTDIR}:
-	${MKDIR} ${OUTDIR}
 
 clean:
 	-$(RM) $(SRC)/*
