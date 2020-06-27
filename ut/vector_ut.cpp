@@ -402,6 +402,140 @@ TEST_CASE( "Initialize the vector crc", "Construct an initialized object" ) {
     REQUIRE( vector1.size() == initList.size() );
 }
 
+TEST_CASE( "Copy ctor when CrcVector", "Basic usage" ) {
+    char arena[SIZE_ARENA];
+    cus::CrcAllocation mockArena(reinterpret_cast<void *>(&arena[0]), \
+                                   reinterpret_cast<void *>(&arena[END_ARENA]));
+
+    cus::CrcVector<uint8_t> vector1(mockArena);
+    vector1.push_back(uint8_t(5));
+    cus::CrcVector<uint8_t> vector2(vector1);
+
+    REQUIRE( vector1.size() == 1 );
+    REQUIRE( vector1[0] == 5 );
+    REQUIRE( vector2.size() == 1 );
+    REQUIRE( vector1[0] == 5 );
+}
+
+TEST_CASE( "Copy ctor mem usage when CrcVector", "Copy ctor copies" ) {
+    char arena[SIZE_ARENA];
+    cus::CrcAllocation mockArena(reinterpret_cast<void *>(&arena[0]), \
+                                   reinterpret_cast<void *>(&arena[END_ARENA]));
+
+    cus::CrcVector<uint8_t> vector1(mockArena);
+    for(uint32_t i=0;i<(((SIZE_ARENA/2)-(7*sizeof(arch_t)))/2);i++) {
+        vector1.push_back(uint8_t(5));
+    }
+    cus::CrcVector<uint8_t> vector2(vector1);
+
+    REQUIRE( vector1.size() == ((SIZE_ARENA/2)-(7*sizeof(arch_t)))/2 );
+    REQUIRE( vector2.size() == ((SIZE_ARENA/2)-(7*sizeof(arch_t)))/2 );
+
+    REQUIRE( vector2.push_back(5) == true);
+}
+
+TEST_CASE( "Copy op when CrcVector", "Basic usage" ) {
+    char arena[SIZE_ARENA];
+    cus::CrcAllocation mockArena(reinterpret_cast<void *>(&arena[0]), \
+                                   reinterpret_cast<void *>(&arena[END_ARENA]));
+
+    cus::CrcVector<uint8_t> vector1(mockArena);
+    vector1.push_back(uint8_t(5));
+    cus::CrcVector<uint8_t> vector2 = vector1;
+
+    REQUIRE( vector1.size() == 1 );
+    REQUIRE( vector1[0] == 5 );
+    REQUIRE( vector2.size() == 1 );
+    REQUIRE( vector1[0] == 5 );
+}
+
+
+TEST_CASE( "Copy op mem usage when CrcVector", "Copy ctor copies" ) {
+    char arena[SIZE_ARENA];
+    cus::CrcAllocation mockArena(reinterpret_cast<void *>(&arena[0]), \
+                                   reinterpret_cast<void *>(&arena[END_ARENA]));
+
+    cus::CrcVector<uint8_t> vector1(mockArena);
+    for(uint32_t i=0;i<(((SIZE_ARENA/2)-(7*sizeof(arch_t)))/2);i++) {
+        vector1.push_back(uint8_t(5));
+    }
+    cus::CrcVector<uint8_t> vector2 = vector1;
+
+    REQUIRE( vector1.size() == ((SIZE_ARENA/2)-(7*sizeof(arch_t)))/2 );
+    REQUIRE( vector2.size() == ((SIZE_ARENA/2)-(7*sizeof(arch_t)))/2 );
+
+    REQUIRE( vector2.push_back(5) == true);
+}
+
+TEST_CASE( "Move ctor when CrcVector", "Basic usage" ) {
+    char arena[SIZE_ARENA];
+    cus::CrcAllocation mockArena(reinterpret_cast<void *>(&arena[0]), \
+                                   reinterpret_cast<void *>(&arena[END_ARENA]));
+
+    cus::CrcVector<uint8_t> vector1(mockArena);
+    vector1.push_back(uint8_t(5));
+    cus::CrcVector<uint8_t> vector2(std::move(vector1));
+
+    REQUIRE( vector1.size() == 0 );
+    REQUIRE( vector2.size() == 1 );
+    REQUIRE( vector1[0] == 5 );
+}
+
+TEST_CASE( "Move ctor mem usage when CrcVector", "Copy ctor copies" ) {
+    char arena[SIZE_ARENA];
+    cus::CrcAllocation mockArena(reinterpret_cast<void *>(&arena[0]), \
+                                   reinterpret_cast<void *>(&arena[END_ARENA]));
+
+    cus::CrcVector<uint8_t> vector1(mockArena);
+    for(uint32_t i=0;i<(((SIZE_ARENA/2)-(7*sizeof(arch_t)))/2);i++) {
+        vector1.push_back(uint8_t(5));
+    }
+    cus::CrcVector<uint8_t> vector2(std::move(vector1));
+
+    REQUIRE( vector1.size() == 0 );
+    REQUIRE( vector2.size() == ((SIZE_ARENA/2)-(7*sizeof(arch_t)))/2 );
+
+    for(uint32_t i=0;i<(((SIZE_ARENA/2)-(sizeof(arch_t)))/2);i++) {
+        REQUIRE( vector2.push_back(5) == false);
+    }
+    REQUIRE( vector2.push_back(5) == true);
+}
+
+
+TEST_CASE( "Move op when CrcVector", "Basic usage" ) {
+    char arena[SIZE_ARENA];
+    cus::CrcAllocation mockArena(reinterpret_cast<void *>(&arena[0]), \
+                                   reinterpret_cast<void *>(&arena[END_ARENA]));
+
+    cus::CrcVector<uint8_t> vector1(mockArena);
+    vector1.push_back(uint8_t(5));
+    cus::CrcVector<uint8_t> vector2 = std::move(vector1);
+
+    REQUIRE( vector1.size() == 0 );
+    REQUIRE( vector2.size() == 1 );
+    REQUIRE( vector1[0] == 5 );
+}
+
+TEST_CASE( "Move op mem usage when CrcVector", "Copy ctor copies" ) {
+    char arena[SIZE_ARENA];
+    cus::CrcAllocation mockArena(reinterpret_cast<void *>(&arena[0]), \
+                                   reinterpret_cast<void *>(&arena[END_ARENA]));
+
+    cus::CrcVector<uint8_t> vector1(mockArena);
+    for(uint32_t i=0;i<(((SIZE_ARENA/2)-(7*sizeof(arch_t)))/2);i++) {
+        vector1.push_back(uint8_t(5));
+    }
+    cus::CrcVector<uint8_t> vector2 = std::move(vector1);
+
+    REQUIRE( vector1.size() == 0 );
+    REQUIRE( vector2.size() == (((SIZE_ARENA/2)-(7*sizeof(arch_t)))/2) );
+
+    for(uint32_t i=0;i<(((SIZE_ARENA/2)-(sizeof(arch_t)))/2);i++) {
+        REQUIRE( vector2.push_back(5) == false);
+    }
+    REQUIRE( vector2.push_back(5) == true);
+}
+
 TEST_CASE( "Used space by vector crc", "A vector can use the whole arena minus metadata" ) {
     char arena[SIZE_ARENA];
     cus::CrcAllocation mockArena(reinterpret_cast<void *>(&arena[0]), \
