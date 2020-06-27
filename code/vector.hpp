@@ -58,12 +58,24 @@ class Vector: public Container {
          * @brief   Copy constructir
          * @note    Temporally deleted (!0-3-5)
          */
-        Vector(const Vector&) = delete;
+        Vector(Vector& vector);
         /*!
          * @brief   Copy constructir
          * @note    Temporally deleted (!0-3-5)
          */
-        Vector& operator=(const Vector&) = delete;
+        Vector<T,A>& operator=(Vector<T,A>&);
+
+        /*!
+         * @brief   Move constructir
+         * @note    Temporally deleted (!0-3-5)
+         */
+        Vector(Vector&& vector);
+        /*!
+         * @brief   Copy constructir
+         * @note    Temporally deleted (!0-3-5)
+         */
+        Vector<T,A>& operator=(Vector<T,A>&&);
+
         /*!
          * @brief   It allows to append an element of type T at the end of
          *          object. It copies the element, so there will be two positions
@@ -161,20 +173,26 @@ class CrcVector: public Vector<T,CrcAllocation> {
          */
         explicit CrcVector(CrcAllocation& section,std::initializer_list<T> cList);
         /*!
-         * @brief   Destructor to notify the lower layers that the memory used
-         *          by the self is not needed anymore and it has to be released
+         * @brief   Copy constructir
+         * @note    Temporally deleted (!0-3-5)
          */
-        //~CrcVector();
+        CrcVector(CrcVector<T>&);
         /*!
          * @brief   Copy constructir
          * @note    Temporally deleted (!0-3-5)
          */
-        CrcVector(const CrcVector&) = delete;
+        CrcVector<T>& operator=(CrcVector<T>&);
+
+        /*!
+         * @brief   Move constructir
+         * @note    Temporally deleted (!0-3-5)
+         */
+        CrcVector(CrcVector&& vector);
         /*!
          * @brief   Copy constructir
          * @note    Temporally deleted (!0-3-5)
          */
-        CrcVector& operator=(const CrcVector&) = delete;
+        CrcVector<T>& operator=(CrcVector<T>&&);
         /*!
          * @brief   It allows to append an element of type T at the end of
          *          object. It copies the element, so there will be two positions

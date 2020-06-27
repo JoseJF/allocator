@@ -39,6 +39,48 @@ Vector<T,A>::Vector(A& section,std::initializer_list<T> cList) {
 }
 
 template <typename T, typename A>
+Vector<T,A>::Vector(Vector& vector) {
+    internalFailure=false;
+    arena = (void *)vector.arena;
+    aMem=nullptr;
+    elements=0;
+
+    push_back(vector);
+}
+
+template <typename T, typename A>
+Vector<T,A>& Vector<T,A>::operator=(Vector<T,A>& vector) {
+    internalFailure=false;
+    arena = (void *)vector.arena;
+    aMem=nullptr;
+    elements=0;
+
+    push_back(vector);
+}
+
+template <typename T, typename A>
+Vector<T,A>::Vector(Vector&& vector) {
+    internalFailure=false;
+    arena = (void *)vector.arena;
+    aMem=nullptr;
+    elements=0;
+
+    push_back(vector);
+    vector.~Vector();
+}
+
+template <typename T, typename A>
+Vector<T,A>& Vector<T,A>::operator=(Vector<T,A>&& vector) {
+    internalFailure=false;
+    arena = (void *)vector.arena;
+    aMem=nullptr;
+    elements=0;
+
+    push_back(vector);
+    vector.~Vector();
+}
+
+template <typename T, typename A>
 Vector<T,A>::~Vector() {
     elements=0;
     ((A *)arena)->deallocate((arch_t)&aMem);
@@ -158,8 +200,45 @@ CrcVector<T>::CrcVector(CrcAllocation& section):Vector<T,CrcAllocation>(section)
 template <typename T>
 CrcVector<T>::CrcVector(CrcAllocation& section,std::initializer_list<T> cList): \
         Vector<T,CrcAllocation>(section,cList) {
+
     ((CrcAllocation *)arena)->updateMirror();
 }
+
+
+
+template <typename T>
+CrcVector<T>::CrcVector(CrcVector<T>& vector):\
+        Vector<T,CrcAllocation>(*((CrcAllocation *)vector.arena)) {
+
+    push_back(vector);
+    ((CrcAllocation *)arena)->updateMirror();
+}
+
+
+template <typename T>
+CrcVector<T>& CrcVector<T>::operator=(CrcVector<T>& vector) {
+
+    push_back(vector);
+    ((CrcAllocation *)arena)->updateMirror();
+}
+
+template <typename T>
+CrcVector<T>::CrcVector(CrcVector<T>&& vector):\
+        Vector<T,CrcAllocation>(*((CrcAllocation *)vector.arena)) {
+
+    push_back(vector);
+    ((CrcAllocation *)arena)->updateMirror();
+    vector.~Vector<T,CrcAllocation>();
+}
+
+template <typename T>
+CrcVector<T>& CrcVector<T>::operator=(CrcVector<T>&& vector) {
+
+    push_back(vector);
+    ((CrcAllocation *)arena)->updateMirror();
+    vector.~Vector<T,CrcAllocation>();
+}
+
 
 template <typename T>
 bool CrcVector<T>::push_back(T value) {
