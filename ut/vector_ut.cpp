@@ -9,6 +9,7 @@
 const uint32_t SIZE_ARENA=500;
 const uint32_t END_ARENA=500;
 
+
 TEST_CASE( "Basic vector", "Create an empty object" ) {
     char arena[SIZE_ARENA];
     cus::BasicAllocation mockArena(reinterpret_cast<void *>(&arena[0]), \
@@ -654,3 +655,4 @@ TEST_CASE( "Vector crc erase", "Basic erase" ) {
     REQUIRE( vector1.size() == 1 );
     REQUIRE( vector1[0] == sizeVector-1 );
 }
+

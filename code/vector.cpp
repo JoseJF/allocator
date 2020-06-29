@@ -20,7 +20,7 @@
 namespace cus {
 
 template <typename T, typename A>
-Vector<T,A>::Vector(A& section) {
+Vector<T,A>::Vector(const A& section) noexcept {
     internalFailure=false;
     arena = (void *)&section;
     aMem=nullptr;
@@ -28,7 +28,7 @@ Vector<T,A>::Vector(A& section) {
 }
 
 template <typename T, typename A>
-Vector<T,A>::Vector(A& section,std::initializer_list<T> cList) {
+Vector<T,A>::Vector(const A& section,const std::initializer_list<T> cList) noexcept {
     internalFailure=false;
     arena = (void *)&section;
     aMem=nullptr;
@@ -39,55 +39,59 @@ Vector<T,A>::Vector(A& section,std::initializer_list<T> cList) {
 }
 
 template <typename T, typename A>
-Vector<T,A>::Vector(Vector& vector) {
-    internalFailure=false;
-    arena = (void *)vector.arena;
-    aMem=nullptr;
-    elements=0;
-
-    push_back(vector);
-}
-
-template <typename T, typename A>
-Vector<T,A>& Vector<T,A>::operator=(Vector<T,A>& vector) {
-    internalFailure=false;
-    arena = (void *)vector.arena;
-    aMem=nullptr;
-    elements=0;
-
-    push_back(vector);
-}
-
-template <typename T, typename A>
-Vector<T,A>::Vector(Vector&& vector) {
-    internalFailure=false;
-    arena = (void *)vector.arena;
-    aMem=nullptr;
-    elements=0;
-
-    push_back(vector);
-    vector.~Vector();
-}
-
-template <typename T, typename A>
-Vector<T,A>& Vector<T,A>::operator=(Vector<T,A>&& vector) {
-    internalFailure=false;
-    arena = (void *)vector.arena;
-    aMem=nullptr;
-    elements=0;
-
-    push_back(vector);
-    vector.~Vector();
-}
-
-template <typename T, typename A>
-Vector<T,A>::~Vector() {
+Vector<T,A>::~Vector() noexcept {
     elements=0;
     ((A *)arena)->deallocate((arch_t)&aMem);
 }
 
+
 template <typename T, typename A>
-bool Vector<T,A>::push_back(T value) {
+Vector<T,A>::Vector(const Vector& vector) noexcept {
+    internalFailure=false;
+    arena = (void *)vector.arena;
+    aMem=nullptr;
+    elements=0;
+
+    push_back(vector);
+
+
+}
+
+template <typename T, typename A>
+Vector<T,A>& Vector<T,A>::operator=(const Vector<T,A>& vector) noexcept {
+    internalFailure=false;
+    arena = (void *)vector.arena;
+    aMem=nullptr;
+    elements=0;
+
+    push_back(vector);
+}
+
+template <typename T, typename A>
+Vector<T,A>::Vector(const Vector&& vector) noexcept {
+    internalFailure=false;
+    arena = (void *)vector.arena;
+    aMem=nullptr;
+    elements=0;
+
+    push_back(vector);
+    vector.~Vector();
+}
+
+template <typename T, typename A>
+Vector<T,A>& Vector<T,A>::operator=(const Vector<T,A>&& vector) noexcept {
+    internalFailure=false;
+    arena = (void *)vector.arena;
+    aMem=nullptr;
+    elements=0;
+
+    push_back(vector);
+    vector.~Vector();
+}
+
+
+template <typename T, typename A>
+bool Vector<T,A>::push_back(const T value) noexcept {
     bool validAlloc = false;
 
     if(elements==0) {
@@ -108,7 +112,7 @@ bool Vector<T,A>::push_back(T value) {
 }
 
 template <typename T, typename A>
-bool Vector<T,A>::push_back(Vector<T,A>& toAppend) {
+bool Vector<T,A>::push_back(const Vector<T,A>& toAppend) noexcept {
     for(uint32_t idx=0;idx<toAppend.size();idx++) {
         push_back(toAppend[idx]);
     }
@@ -117,7 +121,7 @@ bool Vector<T,A>::push_back(Vector<T,A>& toAppend) {
 }
 
 template <typename T, typename A>
-bool Vector<T,A>::resize(uint32_t newElements) {
+bool Vector<T,A>::resize(const uint32_t newElements) noexcept {
     bool validAlloc = false;
 
     if(elements==0) {
@@ -139,7 +143,7 @@ bool Vector<T,A>::resize(uint32_t newElements) {
 }
 
 template <typename T, typename A>
-void Vector<T,A>::erase(uint32_t index) {
+void Vector<T,A>::erase(const uint32_t index) noexcept {
     if(index < elements) {
         bool removed = ((A *)arena)->removeElement((arch_t)&aMem, \
                                 (void *)((T *)aMem + index), sizeof(T));
@@ -152,7 +156,7 @@ void Vector<T,A>::erase(uint32_t index) {
 }
 
 template <typename T, typename A>
-void Vector<T,A>::erase(uint32_t index, bool& erased) {
+void Vector<T,A>::erase(const uint32_t index, bool& erased) noexcept {
     erased=false;
     if(index < elements) {
         bool removed = ((A *)arena)->removeElement((arch_t)&aMem, \
@@ -167,22 +171,27 @@ void Vector<T,A>::erase(uint32_t index, bool& erased) {
 }
 
 template <typename T, typename A>
-std::size_t Vector<T,A>::size() {
+std::size_t Vector<T,A>::size() const noexcept {
     return elements;
 }
 
 template <typename T, typename A>
-bool Vector<T,A>::isJeopardized() {
+bool Vector<T,A>::isJeopardized() const noexcept {
     return internalFailure;
 }
 
 template <typename T, typename A>
-T& Vector<T,A>::operator[](uint32_t index) {
+T& Vector<T,A>::operator[](const uint32_t index) noexcept {
     return *((T *)aMem + index);
 }
 
 template <typename T, typename A>
-T Vector<T,A>::at(uint32_t index,bool& outOfBoundaries) {
+const T& Vector<T,A>::operator[](const uint32_t index) const noexcept {
+    return *((T *)aMem + index);
+}
+
+template <typename T, typename A>
+T Vector<T,A>::at(const uint32_t index,bool& outOfBoundaries) noexcept {
     if(index<elements) {
         outOfBoundaries=false;
         return *((T *)aMem + index);
@@ -193,12 +202,14 @@ T Vector<T,A>::at(uint32_t index,bool& outOfBoundaries) {
 
 
 template <typename T>
-CrcVector<T>::CrcVector(CrcAllocation& section):Vector<T,CrcAllocation>(section) {
+CrcVector<T>::CrcVector(const CrcAllocation& section) noexcept : \
+        Vector<T,CrcAllocation>(section) {
 
 }
 
 template <typename T>
-CrcVector<T>::CrcVector(CrcAllocation& section,std::initializer_list<T> cList): \
+CrcVector<T>::CrcVector(const CrcAllocation& section, \
+        const std::initializer_list<T> cList) noexcept: \
         Vector<T,CrcAllocation>(section,cList) {
 
     ((CrcAllocation *)arena)->updateMirror();
@@ -207,7 +218,7 @@ CrcVector<T>::CrcVector(CrcAllocation& section,std::initializer_list<T> cList): 
 
 
 template <typename T>
-CrcVector<T>::CrcVector(CrcVector<T>& vector):\
+CrcVector<T>::CrcVector(const CrcVector<T>& vector) noexcept:\
         Vector<T,CrcAllocation>(*((CrcAllocation *)vector.arena)) {
 
     push_back(vector);
@@ -216,14 +227,14 @@ CrcVector<T>::CrcVector(CrcVector<T>& vector):\
 
 
 template <typename T>
-CrcVector<T>& CrcVector<T>::operator=(CrcVector<T>& vector) {
+CrcVector<T>& CrcVector<T>::operator=(const CrcVector<T>& vector) noexcept {
 
     push_back(vector);
     ((CrcAllocation *)arena)->updateMirror();
 }
 
 template <typename T>
-CrcVector<T>::CrcVector(CrcVector<T>&& vector):\
+CrcVector<T>::CrcVector(const CrcVector<T>&& vector) noexcept :\
         Vector<T,CrcAllocation>(*((CrcAllocation *)vector.arena)) {
 
     push_back(vector);
@@ -232,7 +243,7 @@ CrcVector<T>::CrcVector(CrcVector<T>&& vector):\
 }
 
 template <typename T>
-CrcVector<T>& CrcVector<T>::operator=(CrcVector<T>&& vector) {
+CrcVector<T>& CrcVector<T>::operator=(const CrcVector<T>&& vector) noexcept {
 
     push_back(vector);
     ((CrcAllocation *)arena)->updateMirror();
@@ -241,7 +252,7 @@ CrcVector<T>& CrcVector<T>::operator=(CrcVector<T>&& vector) {
 
 
 template <typename T>
-bool CrcVector<T>::push_back(T value) {
+bool CrcVector<T>::push_back(const T value) noexcept {
     bool validAlloc = false;
 
     bool crcOk = ((CrcAllocation *)arena)->checkConsistency();
@@ -272,7 +283,7 @@ bool CrcVector<T>::push_back(T value) {
 }
 
 template <typename T>
-bool CrcVector<T>::push_back(CrcVector<T>& toAppend) {
+bool CrcVector<T>::push_back(const CrcVector<T>& toAppend) noexcept {
     for(uint32_t idx=0;idx<toAppend.size();idx++) {
         push_back(toAppend[idx]);
     }
@@ -281,7 +292,7 @@ bool CrcVector<T>::push_back(CrcVector<T>& toAppend) {
 }
 
 template <typename T>
-bool CrcVector<T>::resize(uint32_t newElements) {
+bool CrcVector<T>::resize(const uint32_t newElements) noexcept {
     bool validAlloc = false;
 
     bool crcOk = ((CrcAllocation *)arena)->checkConsistency();
@@ -312,7 +323,7 @@ bool CrcVector<T>::resize(uint32_t newElements) {
 }
 
 template <typename T>
-void CrcVector<T>::erase(uint32_t index) {
+void CrcVector<T>::erase(const uint32_t index) noexcept {
     if(index < elements) {
         bool crcOk = ((CrcAllocation *)arena)->checkConsistency();
         if(crcOk==true) {
@@ -333,7 +344,7 @@ void CrcVector<T>::erase(uint32_t index) {
 }
 
 template <typename T>
-void CrcVector<T>::erase(uint32_t index, bool& erased) {
+void CrcVector<T>::erase(const uint32_t index, bool& erased) noexcept {
     erased=false;
     if(index < elements) {
         bool crcOk = ((CrcAllocation *)arena)->checkConsistency();
@@ -356,7 +367,7 @@ void CrcVector<T>::erase(uint32_t index, bool& erased) {
 }
 
 template <typename T>
-T CrcVector<T>::at(uint32_t index,bool& outOfBoundaries) {
+T CrcVector<T>::at(const uint32_t index,bool& outOfBoundaries) noexcept {
     if(index<elements) {
         outOfBoundaries=false;
         bool crcOk = ((CrcAllocation *)arena)->checkConsistency();
@@ -373,7 +384,8 @@ T CrcVector<T>::at(uint32_t index,bool& outOfBoundaries) {
 }
 
 template <typename T>
-void CrcVector<T>::set(uint32_t index, bool& outOfBoundaries, T value) {
+void CrcVector<T>::set(const uint32_t index, bool& outOfBoundaries, \
+        const T value) noexcept {
     if(index<elements) {
         outOfBoundaries=false;
         bool crcOk = ((CrcAllocation *)arena)->checkConsistency();

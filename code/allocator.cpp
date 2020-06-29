@@ -72,10 +72,11 @@ arch_t MathArch::roundUp(arch_t numToRound, uint32_t multiple)
     return numToRound + multiple - remainder;
 }
 
-BasicAllocation::BasicAllocation() {
-}
+BasicAllocation::BasicAllocation() {}
 
-BasicAllocation::BasicAllocation(const void *startSection,const void *endSection) {
+
+BasicAllocation::BasicAllocation(const void *startSection, \
+        const void *endSection) noexcept {
 
     sizeArena=(((((arch_t)endSection)-(arch_t)startSection)));
     start=((arch_t *)(startSection));
@@ -85,8 +86,8 @@ BasicAllocation::BasicAllocation(const void *startSection,const void *endSection
     lastAddr=0;
 }
 
-bool BasicAllocation::allocate(arch_t addrRequester, void*& requester, \
-        std::size_t nBytes) {
+bool BasicAllocation::allocate(const arch_t addrRequester, void*& requester, \
+        std::size_t nBytes) noexcept {
     //std::lock_guard<std::mutex> guard(allocator_mutex);
 
     bool success=true;
@@ -128,7 +129,7 @@ bool BasicAllocation::allocate(arch_t addrRequester, void*& requester, \
     return success;
 }
 
-bool BasicAllocation::deallocate(arch_t addrRequester) {
+bool BasicAllocation::deallocate(const arch_t addrRequester) noexcept {
     bool valueFound=false;
     //std::lock_guard<std::mutex> guard(allocator_mutex);
 
@@ -151,8 +152,8 @@ bool BasicAllocation::deallocate(arch_t addrRequester) {
     return valueFound;
 }
 
-bool BasicAllocation::removeElement(arch_t addrRequester, void * posElement, \
-        size_t size) {
+bool BasicAllocation::removeElement(const arch_t addrRequester, void * posElement, \
+        const size_t size) noexcept {
     //std::lock_guard<std::mutex> guard(allocator_mutex);
 
     arch_t numberOfObjects=(lastAddr)/TOTAL_ELEMENTS;
@@ -175,8 +176,8 @@ bool BasicAllocation::removeElement(arch_t addrRequester, void * posElement, \
 
 
 
-bool BasicAllocation::reallocate(void*& requester, std::size_t pBytes, \
-        std::size_t nBytes) {
+bool BasicAllocation::reallocate(void*& requester, const std::size_t pBytes, \
+        const std::size_t nBytes) noexcept {
     //std::lock_guard<std::mutex> guard(allocator_mutex);
 
     bool success=false;
@@ -239,7 +240,7 @@ bool BasicAllocation::reallocate(void*& requester, std::size_t pBytes, \
     return success;
 }
 
-uint32_t BasicAllocation::elements() {
+uint32_t BasicAllocation::elements() const noexcept {
     return (lastAddr)/TOTAL_ELEMENTS;
 }
 
@@ -256,7 +257,7 @@ uint32_t BasicAllocation::sizeElement(void*& requester) {
 */
 
 void BasicAllocation::removeFromAddresses(uint32_t indexToDelete, \
-        void * element, size_t size) {
+        void * const element, size_t size) noexcept {
     //std::lock_guard<std::mutex> guard(allocator_mutex);
 
     arch_t numberOfObjects=(lastAddr)/TOTAL_ELEMENTS;
@@ -309,7 +310,7 @@ void BasicAllocation::removeFromAddresses(uint32_t indexToDelete, \
     lastData-=size;
 }
 
-void BasicAllocation::shrinkData() {
+void BasicAllocation::shrinkData() noexcept {
     //std::lock_guard<std::mutex> guard(allocator_mutex);
 
     arch_t numberOfObjects=(lastAddr)/TOTAL_ELEMENTS;
@@ -358,7 +359,7 @@ void BasicAllocation::showMap() {
     }
 }
 
-CrcAllocation::CrcAllocation(const void *startSection,const void *endSection) {
+CrcAllocation::CrcAllocation(const void *startSection,const void *endSection) noexcept {
 
     sizeArena=((((arch_t)endSection)-(arch_t)startSection)/2)-sizeof(arch_t);
     startCRC=((arch_t *)startSection);
@@ -378,7 +379,7 @@ CrcAllocation::CrcAllocation(const void *startSection,const void *endSection) {
     updateMirror();
 }
 
-void CrcAllocation::updateMirror() {
+void CrcAllocation::updateMirror() noexcept {
     //std::lock_guard<std::mutex> guard(allocator_mutex);
 
     // This will have to copy only the modified
@@ -393,7 +394,7 @@ void CrcAllocation::updateMirror() {
 }
 
 
-bool CrcAllocation::checkConsistency() {
+bool CrcAllocation::checkConsistency() noexcept {
     //std::lock_guard<std::mutex> guard(allocator_mutex);
 
     bool pass=true;

@@ -86,7 +86,8 @@ class BasicAllocation: public MathArch, public MemoryMgmt {
          * @param   endSection pointer to the ending address of the reserved
          *          area of memory
          */
-        BasicAllocation(const void *startSection, const void *endSection);
+        explicit BasicAllocation(const void *startSection, \
+                const void *endSection) noexcept;
         /*!
          * @brief   Copy constructor not allowed
          */
@@ -112,7 +113,8 @@ class BasicAllocation: public MathArch, public MemoryMgmt {
          * @param   nBytes Number of bytes to be reserved for the requester
          * @return  True if the allocation was valid. Otherwise, False
          */
-        bool allocate(arch_t addrRequester, void*& requester,std::size_t nBytes);
+        bool allocate(const arch_t addrRequester, void*& requester, \
+                std::size_t nBytes) noexcept;
         /*!
          * @brief   It allows to resize the previously allocated memory for an
          *          object.
@@ -126,7 +128,8 @@ class BasicAllocation: public MathArch, public MemoryMgmt {
          *          memory.
          * @return  True if the reallocation was valid, Otherwise, False.
          */
-        bool reallocate(void*& requester,std::size_t pBytes, std::size_t nBytes);
+        bool reallocate(void*& requester, const std::size_t pBytes, \
+                const std::size_t nBytes) noexcept;
         /*!
          * @brief   It wipes the reserved memory for an object and all its
          *          references.
@@ -134,7 +137,7 @@ class BasicAllocation: public MathArch, public MemoryMgmt {
          *          reserved area of memory
          * @return  True if the reallocation was valid, Otherwise, False.
          */
-        bool deallocate(arch_t addrRequester);
+        bool deallocate(const arch_t addrRequester) noexcept;
         /*!
          * @brief   It allows to remove part of the reserved memory of an
          *          object.
@@ -148,19 +151,21 @@ class BasicAllocation: public MathArch, public MemoryMgmt {
          *          memory.
          * @return  True if the reallocation was valid, Otherwise, False.
          */
-        bool removeElement(arch_t addrRequester, void * posElement, size_t size);
+        bool removeElement(const arch_t addrRequester, void * posElement, \
+                const size_t size) noexcept;
         /*!
          * @brief   It provides the number of allocated elements
          */
-        uint32_t elements();
+        uint32_t elements() const noexcept;
         /*!
          * @brief   Debugging purposes
          */
         void showMap();
   protected:
         BasicAllocation();
-        void removeFromAddresses(uint32_t indexToDelete, void * element, size_t size);
-        void shrinkData();
+        void removeFromAddresses(uint32_t indexToDelete, void * const element, \
+                size_t size) noexcept;
+        void shrinkData() noexcept;
 
         arch_t sizeArena;
         arch_t *start;
@@ -187,7 +192,8 @@ class CrcAllocation: public BasicAllocation {
          * @param   endSection pointer to the ending address of the reserved
          *          area of memory
          */
-        CrcAllocation(const void *startSection, const void *endSection);
+        explicit CrcAllocation(const void *startSection, \
+                const void *endSection) noexcept;
         /*!
          * @brief   Copy constructor not allowed
          */
@@ -211,7 +217,7 @@ class CrcAllocation: public BasicAllocation {
          *          It means that this member has to be called when the memory is
          *          written in order to update the status
          */
-        void updateMirror();
+        void updateMirror() noexcept;
         /*!
          * @brief   If the object was created in double copu mode,
          *          this membre will check the arena, in order to work out if the
@@ -224,7 +230,7 @@ class CrcAllocation: public BasicAllocation {
          * @return  True if the consistency is valid or it was able to restore it.
          *          Otherwise, False.
          */
-        bool checkConsistency();
+        bool checkConsistency() noexcept;
     private:
         arch_t *startMirror;
         arch_t *endMirror;
@@ -243,12 +249,12 @@ class Container {
         /*!
          * @brief   All the objets will have to provide a way to get its size
          */
-        virtual std::size_t size()=0;
+        virtual std::size_t size() const noexcept =0;
         /*!
          * @brief   All the objets will have to provide a way to know if the
          *          memory is corrupted
          */
-        virtual bool isJeopardized()=0;
+        virtual bool isJeopardized() const noexcept =0;
         /*!
          * @brief    Pointer to the reserved memory for this object
          */

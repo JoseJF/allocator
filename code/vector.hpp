@@ -40,7 +40,7 @@ class Vector: public Container {
          * @param   section Reference of an object of typed BasicAllocation
          *          to be used a lower layer to manage the memory
          */
-        explicit Vector(A& section);
+        explicit Vector(const A& section) noexcept;
         /*!
          * @brief   Constructor when receiving an allocator and a list to
          *          initialise the cus::Vector object
@@ -48,33 +48,33 @@ class Vector: public Container {
          *          to be used a lower layer to manage the memory
          * @param   cList object used to initialise the object
          */
-        explicit Vector(A& section,std::initializer_list<T> cList);
+        explicit Vector(const A& section,const std::initializer_list<T> cList) noexcept;
         /*!
          * @brief   Destructor to notify the lower layers that the memory used
          *          by the self is not needed anymore and it has to be released
          */
-        virtual ~Vector();
+        virtual ~Vector() noexcept;
         /*!
          * @brief   Copy constructir
          * @note    Temporally deleted (!0-3-5)
          */
-        Vector(Vector& vector);
+        Vector(const Vector& vector) noexcept;
         /*!
          * @brief   Copy constructir
          * @note    Temporally deleted (!0-3-5)
          */
-        Vector<T,A>& operator=(Vector<T,A>&);
+        Vector<T,A>& operator=(const Vector<T,A>&) noexcept;
 
         /*!
          * @brief   Move constructir
          * @note    Temporally deleted (!0-3-5)
          */
-        Vector(Vector&& vector);
+        Vector(const Vector&& vector) noexcept;
         /*!
          * @brief   Copy constructir
          * @note    Temporally deleted (!0-3-5)
          */
-        Vector<T,A>& operator=(Vector<T,A>&&);
+        Vector<T,A>& operator=(const Vector<T,A>&&) noexcept;
 
         /*!
          * @brief   It allows to append an element of type T at the end of
@@ -89,7 +89,7 @@ class Vector: public Container {
          *          compilation time and fixed, cus::array should be used.
          * @return  True if the object is not corrupted. Otherwise, False.
          */
-        virtual bool push_back(T value);
+        virtual bool push_back(const T value) noexcept;
         /*!
          * @brief   It allows to append elements of type T at the end of the
          *          object. It copies, so there will be different areas of
@@ -97,7 +97,7 @@ class Vector: public Container {
          * @param   toAppend cus::Vector<T> which contains the elements to append
          * @return  True if the object is not corrupted. Otherwise, False.
          */
-        virtual bool push_back(Vector<T,A>& toAppend);
+        virtual bool push_back(const Vector<T,A>& toAppend) noexcept;
         /*!
          * @brief   It assignes more space for the object. The space is based on
          *          the type T, so different bytes might be allocated for the same
@@ -105,31 +105,31 @@ class Vector: public Container {
          * @param   newElements amount of elements to increment the Vector
          * @return  True if the resize was valid. Otherwise, False.
          */
-        virtual bool resize(uint32_t newElements);
+        virtual bool resize(const uint32_t newElements) noexcept;
         /*!
          * @brief   It removes a specific element in the object
          * @param   index Position of the element in the object to remove
          * @return  True if the object is not corrupted. Otherwise, False.
          */
-        virtual void erase(uint32_t index);
+        virtual void erase(const uint32_t index) noexcept;
         /*!
          * @brief   It removes a specific element in the object
          * @param   index Position of the element in the object to remove
          * @param   erased True if the elements was found and deleted
          * @return  True if the object is not corrupted. Otherwise, False.
          */
-        virtual void erase(uint32_t index,bool& erased);
+        virtual void erase(const uint32_t index,bool& erased) noexcept;
         /*!
          * @brief   It provides the amount of elements of the object
          * @return  The number of elements of size sizeof(T) in the object
          */
-        std::size_t size();
+        std::size_t size() const noexcept;
         /*!
          * @brief   It indicates if there was a critical failure and the
          *          allocator was not able to recover
          * @return  True if jeopardized. Otherwise, False.
          */
-        bool isJeopardized();
+        bool isJeopardized() const noexcept;
         /*!
          * @brief   It returns the value of the requested index
          * @param   index Index to return
@@ -137,7 +137,7 @@ class Vector: public Container {
          *          is bigger than size()
          * @return  The value in index of type T
          */
-        virtual T at(uint32_t index,bool& outOfBoundaries);
+        virtual T at(const uint32_t index,bool& outOfBoundaries) noexcept;
         /*!
          * @brief   It return the value of the requested index
          * @param   index Index to return
@@ -145,7 +145,9 @@ class Vector: public Container {
          *          so if index >= size, it's undefined behaviour. For a safe
          *          way, use at()
          */
-        virtual T& operator[](uint32_t index);
+        virtual T& operator[](const uint32_t index) noexcept;
+
+        virtual const T& operator[](const uint32_t index) const noexcept;
     protected:
         bool internalFailure;
         uint32_t elements;
@@ -163,7 +165,7 @@ class CrcVector: public Vector<T,CrcAllocation> {
          * @param   section Reference of an object of typed BasicAllocation
          *          to be used a lower layer to manage the memory
          */
-        explicit CrcVector(CrcAllocation& section);
+        explicit CrcVector(const CrcAllocation& section) noexcept;
         /*!
          * @brief   Constructor when receiving an allocator and a list to
          *          initialise the cus::Vector object
@@ -171,28 +173,25 @@ class CrcVector: public Vector<T,CrcAllocation> {
          *          to be used a lower layer to manage the memory
          * @param   cList object used to initialise the object
          */
-        explicit CrcVector(CrcAllocation& section,std::initializer_list<T> cList);
+        explicit CrcVector(const CrcAllocation& section, \
+                const std::initializer_list<T> cList) noexcept;
         /*!
          * @brief   Copy constructir
-         * @note    Temporally deleted (!0-3-5)
          */
-        CrcVector(CrcVector<T>&);
+        CrcVector(const CrcVector<T>&) noexcept;
         /*!
          * @brief   Copy constructir
-         * @note    Temporally deleted (!0-3-5)
          */
-        CrcVector<T>& operator=(CrcVector<T>&);
+        CrcVector<T>& operator=(const CrcVector<T>&) noexcept;
 
         /*!
          * @brief   Move constructir
-         * @note    Temporally deleted (!0-3-5)
          */
-        CrcVector(CrcVector&& vector);
+        CrcVector(const CrcVector&& vector) noexcept;
         /*!
          * @brief   Copy constructir
-         * @note    Temporally deleted (!0-3-5)
          */
-        CrcVector<T>& operator=(CrcVector<T>&&);
+        CrcVector<T>& operator=(const CrcVector<T>&&) noexcept;
         /*!
          * @brief   It allows to append an element of type T at the end of
          *          object. It copies the element, so there will be two positions
@@ -206,7 +205,7 @@ class CrcVector: public Vector<T,CrcAllocation> {
          *          compilation time and fixed, cus::array should be used.
          * @return  True if the object is not corrupted. Otherwise, False.
          */
-        bool push_back(T value);
+        bool push_back(const T value) noexcept;
         /*!
          * @brief   It allows to append elements of type T at the end of the
          *          object. It copies, so there will be different areas of
@@ -214,7 +213,7 @@ class CrcVector: public Vector<T,CrcAllocation> {
          * @param   toAppend cus::Vector<T> which contains the elements to append
          * @return  True if the object is not corrupted. Otherwise, False.
          */
-        bool push_back(CrcVector<T>& toAppend);
+        bool push_back(const CrcVector<T>& toAppend) noexcept;
         /*!
          * @brief   It assignes more space for the object. The space is based on
          *          the type T, so different bytes might be allocated for the same
@@ -222,20 +221,20 @@ class CrcVector: public Vector<T,CrcAllocation> {
          * @param   newElements amount of elements to increment the Vector
          * @return  True if the resize was valid. Otherwise, False.
          */
-        bool resize(uint32_t newElements);
+        bool resize(const uint32_t newElements) noexcept;
         /*!
          * @brief   It removes a specific element in the object
          * @param   index Position of the element in the object to remove
          * @return  True if the object is not corrupted. Otherwise, False.
          */
-        void erase(uint32_t index);
+        void erase(const uint32_t index) noexcept;
         /*!
          * @brief   It removes a specific element in the object
          * @param   index Position of the element in the object to remove
          * @param   erased True if the elements was found and deleted
          * @return  True if the object is not corrupted. Otherwise, False.
          */
-        void erase(uint32_t index,bool& erased);
+        void erase(const uint32_t index,bool& erased) noexcept;
         /*!
          * @brief   It returns the value of the requested index
          * @param   index Index to return
@@ -243,9 +242,9 @@ class CrcVector: public Vector<T,CrcAllocation> {
          *          is bigger than size()
          * @return  The value in index of type T
          */
-        T at(uint32_t index,bool& outOfBoundaries);
+        T at(const uint32_t index,bool& outOfBoundaries) noexcept;
 
-        void set(uint32_t index, bool& outOfBoundaries, T value);
+        void set(const uint32_t index, bool& outOfBoundaries, const T value) noexcept;
 };
 
 // Valid types
